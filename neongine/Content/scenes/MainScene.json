@@ -1,0 +1,100 @@
+{
+  "SystemDatas": [],
+  "EntityGraph": {
+    "entities": [
+      {
+        "id": 1110027424,
+        "active": true,
+        "components": [
+          {
+            "id": 387939906,
+            "active": true,
+            "typeName": "neongine.Renderer",
+            "serializedData": "{\"Texture\":{\"asset\":\"ball\"},\"Scale\":1.0}"
+          },
+          {
+            "id": 1714956011,
+            "active": true,
+            "typeName": "neongine.Point",
+            "serializedData": "{\"m_LocalPosition\":\"647, 303, NaN\",\"m_LocalRotation\":0.0,\"m_LocalScale\":\"2, 2\"}"
+          },
+          {
+            "id": 2161136389,
+            "active": true,
+            "typeName": "neongine.Name",
+            "serializedData": "{\"m_Value\":\"new_entity\"}"
+          },
+          {
+            "id": 1380386906,
+            "active": true,
+            "typeName": "neon.Draggable",
+            "serializedData": "{}"
+          }
+        ],
+        "children": []
+      },
+      {
+        "id": 1165374554,
+        "active": true,
+        "components": [
+          {
+            "id": 342981103,
+            "active": true,
+            "typeName": "neongine.Renderer",
+            "serializedData": "{\"Texture\":{\"asset\":\"square\"},\"Scale\":1.0}"
+          },
+          {
+            "id": 768278838,
+            "active": true,
+            "typeName": "neongine.Point",
+            "serializedData": "{\"m_LocalPosition\":\"139, 122, NaN\",\"m_LocalRotation\":0.0,\"m_LocalScale\":\"1, 1\"}"
+          },
+          {
+            "id": 1196827209,
+            "active": true,
+            "typeName": "neongine.Name",
+            "serializedData": "{\"m_Value\":\"new_entity\"}"
+          },
+          {
+            "id": 1100224870,
+            "active": true,
+            "typeName": "neon.Draggable",
+            "serializedData": "{}"
+          }
+        ],
+        "children": []
+      },
+      {
+        "id": 4056062592,
+        "active": true,
+        "components": [
+          {
+            "id": 27042588,
+            "active": true,
+            "typeName": "neongine.Renderer",
+            "serializedData": "{\"Texture\":{\"asset\":\"ball\"},\"Scale\":1.0}"
+          },
+          {
+            "id": 2393456447,
+            "active": true,
+            "typeName": "neongine.Point",
+            "serializedData": "{\"m_LocalPosition\":\"475, 212, NaN\",\"m_LocalRotation\":0.0,\"m_LocalScale\":\"1, 1\"}"
+          },
+          {
+            "id": 1953166877,
+            "active": true,
+            "typeName": "neongine.Name",
+            "serializedData": "{\"m_Value\":\"new_entity\"}"
+          },
+          {
+            "id": 1827499756,
+            "active": true,
+            "typeName": "neon.Draggable",
+            "serializedData": "{}"
+          }
+        ],
+        "children": []
+      }
+    ]
+  }
+}

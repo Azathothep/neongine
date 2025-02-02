@@ -1,0 +1,3 @@
+[submodule "neon"]
+	path = neon
+	url = git@github.com:Azathothep/neon.git
