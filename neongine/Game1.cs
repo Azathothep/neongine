@@ -8,6 +8,7 @@ using Newtonsoft.Json;
 using System.ComponentModel;
 using System.IO;
 using System.ComponentModel.DataAnnotations;
+using System.Net.Mime;
 
 
 namespace neongine
@@ -19,11 +20,14 @@ namespace neongine
 
         //private SpriteFont m_SpriteFont;
 
+        public static string RootDirectory;
+
         public Game1()
         {
             _graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";
             IsMouseVisible = true;
+            RootDirectory = Content.RootDirectory;
         }
 
         protected override void Initialize()
@@ -39,7 +43,7 @@ namespace neongine
 
             // m_SpriteFont = Content.Load<SpriteFont>("mainFont");
 
-            //InitializeContent();
+            // InitializeContent();
 
             string scenePath = "./" + Content.RootDirectory + "/" + EditorSaveSystem.SavePath;
             string jsonString = File.ReadAllText(scenePath);
