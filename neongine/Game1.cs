@@ -84,10 +84,8 @@ namespace neongine
             entityID_1.Add<Draggable>();
             entityID_2.Add<Draggable>();
 
-            entityID_1.Add(new Collider(new Shape(Shape.Type.Rectangle, 75, 75), 1, true));
-            entityID_2.Add(new Collider(new Shape(Shape.Type.Rectangle, 50, 50)));
-
-            point2.WorldRotation = 45.0f;
+            entityID_1.Add(new Collider(new Shape(Shape.Type.Circle), 35, true));
+            entityID_2.Add(new Collider(new Shape(Shape.Type.Circle), 50));
 
             CollisionSystem.OnTriggerEnter(entityID_1, (col) => Debug.WriteLine($"entity 1 entering trigger !"));
             CollisionSystem.OnTriggerExit(entityID_1, (col) => Debug.WriteLine($"entity 1 exiting trigger !"));

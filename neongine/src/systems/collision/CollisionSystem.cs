@@ -148,20 +148,21 @@ namespace neongine
                     case Shape.Type.Circle:
                         MonoGame.Primitives2D.DrawCircle(m_SpriteBatch,
                                                     new Vector2(p.WorldPosition.X, p.WorldPosition.Y),
-                                                    c.Shape.Width,
+                                                    c.Width * p.WorldScale.X,
                                                     8,
-                                                    m_IsColliding.Contains(id) ? Color.Red : Color.Green,
-                                                    1);
+                                                    m_IsColliding.Contains(id) ? Color.Red : Color.Yellow);
                         break;
 
                     case Shape.Type.Rectangle:
+                        float screenWidth = c.Width * p.WorldScale.X;
+                        float screenHeight = c.Height * p.WorldScale.Y;
                         MonoGame.Primitives2D.DrawRectangle(m_SpriteBatch,
-                                                        new Rectangle((int)(p.WorldPosition.X - c.Shape.Width / 2),
-                                                                    (int)(p.WorldPosition.Y - c.Shape.Height / 2),
-                                                                    (int)c.Shape.Width,
-                                                                    (int)c.Shape.Height),
+                                                        new Rectangle((int)(p.WorldPosition.X - screenWidth / 2),
+                                                                    (int)(p.WorldPosition.Y - screenHeight / 2),
+                                                                    (int)screenWidth,
+                                                                    (int)screenHeight),
                                                         p.WorldRotation,
-                                                        m_IsColliding.Contains(id) ? Color.Red : Color.Green);
+                                                        m_IsColliding.Contains(id) ? Color.Red : Color.Yellow);
                         break;
 
                     default:

@@ -12,7 +12,7 @@ namespace neongine {
             difference.Z = 0;
             float distanceSqr = difference.LengthSquared();
 
-            float radiuses = c1.Shape.Width + c2.Shape.Width;
+            float radiuses = c1.Width * p1.WorldScale.X + c2.Width * p2.WorldScale.X;
             float radiusesSqr = radiuses * radiuses;
 
             if (distanceSqr > radiusesSqr) {

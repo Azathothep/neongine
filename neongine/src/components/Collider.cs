@@ -9,11 +9,14 @@ namespace neongine
 
         [Serialize]
         private Shape m_Shape;
+        public Shape Shape => m_Shape;
 
         [Serialize]
-        private int m_Size = 1;
+        private float m_Size = 1;
+        public float Size => m_Size;
 
-        public Shape Shape => m_Shape;
+        public float Width => m_Shape.Width * m_Size;
+        public float Height => m_Shape.Height * m_Size;
 
         [Serialize]
         public bool IsTrigger = false;

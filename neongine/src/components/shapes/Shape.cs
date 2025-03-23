@@ -16,7 +16,7 @@
         [Serialize]
         public float Height;
 
-        public Shape(Type shapeType, float width, float height = 1) {
+        public Shape(Type shapeType, float width = 1, float height = 1) {
             ShapeType = shapeType;
             Width = width;
             Height = height;
