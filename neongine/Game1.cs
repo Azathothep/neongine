@@ -43,13 +43,13 @@ namespace neongine
 
             // m_SpriteFont = Content.Load<SpriteFont>("mainFont");
 
-            LoadScene();
+            // LoadScene();
 
             Neongine.LoadCommonSystems(_spriteBatch);
 
             Neongine.LoadEditorSystems(_spriteBatch);
 
-             // InitializeContent();
+            InitializeContent();
         }
 
         private void LoadScene() {
@@ -84,8 +84,10 @@ namespace neongine
             entityID_1.Add<Draggable>();
             entityID_2.Add<Draggable>();
 
-            entityID_1.Add(new Collider(new Shape(Shape.Type.Circle, 75, 75), 1, true));
-            entityID_2.Add(new Collider(new Shape(Shape.Type.Circle, 50, 50)));
+            entityID_1.Add(new Collider(new Shape(Shape.Type.Rectangle, 75, 75), 1, true));
+            entityID_2.Add(new Collider(new Shape(Shape.Type.Rectangle, 50, 50)));
+
+            point2.WorldRotation = 45.0f;
 
             CollisionSystem.OnTriggerEnter(entityID_1, (col) => Debug.WriteLine($"entity 1 entering trigger !"));
             CollisionSystem.OnTriggerExit(entityID_1, (col) => Debug.WriteLine($"entity 1 exiting trigger !"));

@@ -244,29 +244,35 @@ namespace MonoGame
         /// <param name="spriteBatch">The destination drawing surface</param>
         /// <param name="rect">The rectangle to draw</param>
         /// <param name="color">The color to draw the rectangle in</param>
-        public static void DrawRectangle(this SpriteBatch spriteBatch, Rectangle rect, Color color)
+        public static void DrawRectangle(this SpriteBatch spriteBatch, Rectangle rect, float rotation, Color color)
         {
-            DrawRectangle(spriteBatch, rect, color, 1.0f);
-        }
-
-
-        /// <summary>
-        /// Draws a rectangle with the thickness provided
-        /// </summary>
-        /// <param name="spriteBatch">The destination drawing surface</param>
-        /// <param name="rect">The rectangle to draw</param>
-        /// <param name="color">The color to draw the rectangle in</param>
-        /// <param name="thickness">The thickness of the lines</param>
-        public static void DrawRectangle(this SpriteBatch spriteBatch, Rectangle rect, Color color, float thickness)
-        {
-
-            // TODO: Handle rotations
             // TODO: Figure out the pattern for the offsets required and then handle it in the line instead of here
 
-            DrawLine(spriteBatch, new Vector2(rect.X, rect.Y), new Vector2(rect.Right, rect.Y), color, thickness); // top
-            DrawLine(spriteBatch, new Vector2(rect.X + 1f, rect.Y), new Vector2(rect.X + 1f, rect.Bottom + thickness), color, thickness); // left
-            DrawLine(spriteBatch, new Vector2(rect.X, rect.Bottom), new Vector2(rect.Right, rect.Bottom), color, thickness); // bottom
-            DrawLine(spriteBatch, new Vector2(rect.Right + 1f, rect.Y), new Vector2(rect.Right + 1f, rect.Bottom + thickness), color, thickness); // right
+            double rad = float.DegreesToRadians(rotation);
+            float cos = (float)Math.Cos(rad);
+            float sin = (float)Math.Sin(rad);
+
+            Vector2 rectCenter = new Vector2(rect.X + rect.Width / 2, rect.Y + rect.Height / 2);
+
+            float right = rect.Width / 2;
+            float bottom = rect.Height / 2;
+            float x = -right;
+            float y = -bottom;
+
+            Vector2 pointA = rectCenter + new Vector2(x * cos - y * sin, y * cos + x * sin);
+            Vector2 pointB = rectCenter + new Vector2(right * cos - y * sin, y * cos + right * sin);
+            Vector2 pointC = rectCenter + new Vector2(x * cos - bottom * sin, bottom * cos + x * sin);
+            Vector2 pointD = rectCenter + new Vector2(right * cos - bottom * sin, bottom * cos + right * sin);
+
+            DrawLine(spriteBatch, pointA, pointB, color); // top
+            DrawLine(spriteBatch, pointA, pointC, color); // left
+            DrawLine(spriteBatch, pointC, pointD, color); // bottom
+            DrawLine(spriteBatch, pointB, pointD, color); // right
+
+            // DrawLine(spriteBatch, new Vector2(rect.X, rect.Y), new Vector2(rect.Right, rect.Y), color, thickness); // top
+            // DrawLine(spriteBatch, new Vector2(rect.X + 1f, rect.Y), new Vector2(rect.X + 1f, rect.Bottom + thickness), color, thickness); // left
+            // DrawLine(spriteBatch, new Vector2(rect.X, rect.Bottom), new Vector2(rect.Right, rect.Bottom), color, thickness); // bottom
+            // DrawLine(spriteBatch, new Vector2(rect.Right + 1f, rect.Y), new Vector2(rect.Right + 1f, rect.Bottom + thickness), color, thickness); // right
         }
 
 
@@ -277,23 +283,9 @@ namespace MonoGame
         /// <param name="location">Where to draw</param>
         /// <param name="size">The size of the rectangle</param>
         /// <param name="color">The color to draw the rectangle in</param>
-        public static void DrawRectangle(this SpriteBatch spriteBatch, Vector2 location, Vector2 size, Color color)
+        public static void DrawRectangle(this SpriteBatch spriteBatch, Vector2 location, float rotation, Vector2 size, Color color)
         {
-            DrawRectangle(spriteBatch, new Rectangle((int)location.X, (int)location.Y, (int)size.X, (int)size.Y), color, 1.0f);
-        }
-
-
-        /// <summary>
-        /// Draws a rectangle with the thickness provided
-        /// </summary>
-        /// <param name="spriteBatch">The destination drawing surface</param>
-        /// <param name="location">Where to draw</param>
-        /// <param name="size">The size of the rectangle</param>
-        /// <param name="color">The color to draw the rectangle in</param>
-        /// <param name="thickness">The thickness of the line</param>
-        public static void DrawRectangle(this SpriteBatch spriteBatch, Vector2 location, Vector2 size, Color color, float thickness)
-        {
-            DrawRectangle(spriteBatch, new Rectangle((int)location.X, (int)location.Y, (int)size.X, (int)size.Y), color, thickness);
+            DrawRectangle(spriteBatch, new Rectangle((int)location.X, (int)location.Y, (int)size.X, (int)size.Y), rotation, color);
         }
 
         #endregion

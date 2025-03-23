@@ -156,10 +156,11 @@ namespace neongine
 
                     case Shape.Type.Rectangle:
                         MonoGame.Primitives2D.DrawRectangle(m_SpriteBatch,
-                                                        new Rectangle((int)p.WorldPosition.X,
-                                                                    (int)p.WorldPosition.Y,
+                                                        new Rectangle((int)(p.WorldPosition.X - c.Shape.Width / 2),
+                                                                    (int)(p.WorldPosition.Y - c.Shape.Height / 2),
                                                                     (int)c.Shape.Width,
                                                                     (int)c.Shape.Height),
+                                                        p.WorldRotation,
                                                         m_IsColliding.Contains(id) ? Color.Red : Color.Green);
                         break;
 
