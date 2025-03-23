@@ -43,18 +43,22 @@ namespace neongine
 
             // m_SpriteFont = Content.Load<SpriteFont>("mainFont");
 
-            // InitializeContent();
+            LoadScene();
 
+            Neongine.LoadCommonSystems(_spriteBatch);
+
+            Neongine.LoadEditorSystems(_spriteBatch);
+
+             // InitializeContent();
+        }
+
+        private void LoadScene() {
             string scenePath = "./" + Content.RootDirectory + "/" + EditorSaveSystem.SavePath;
             string jsonString = File.ReadAllText(scenePath);
 
             SceneDefinition sceneDefinition = Serializer.DeserializeScene(jsonString);
             
             Scenes.Load(sceneDefinition);
-
-            Neongine.LoadCommonSystems(_spriteBatch);
-
-            Neongine.LoadEditorSystems(_spriteBatch);
         }
 
         private void InitializeContent()
@@ -79,6 +83,12 @@ namespace neongine
 
             entityID_1.Add<Draggable>();
             entityID_2.Add<Draggable>();
+
+            entityID_1.Add(new Collider(new Shape(Shape.Type.Circle, 75, 75), 1, true));
+            entityID_2.Add(new Collider(new Shape(Shape.Type.Circle, 50, 50)));
+
+            CollisionSystem.OnTriggerEnter(entityID_1, (col) => Debug.WriteLine($"entity 1 entering trigger !"));
+            CollisionSystem.OnTriggerExit(entityID_1, (col) => Debug.WriteLine($"entity 1 exiting trigger !"));
         }
 
         protected override void Update(GameTime gameTime)

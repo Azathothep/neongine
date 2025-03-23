@@ -21,8 +21,12 @@ namespace neongine
             Systems.Add(new RenderingSystem(spriteBatch));
 
             Systems.Add(new CollisionSystem(new NoSpacePartitioner(),
-                                            new SeparatingAxisCollisionDetector(),
-                                            new NoCollisionResolver()));
+                                            new BaseCollisionProcessor(
+                                            [
+                                                new CircleToCircleCollisionDetector()
+                                            ]),
+                                            new NoCollisionResolver(),
+                                            spriteBatch));
         }
 
         public static void LoadEditorSystems(SpriteBatch spriteBatch)

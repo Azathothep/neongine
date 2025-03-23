@@ -32,7 +32,7 @@ namespace neongine
             EntityID id = Neongine.Entity("ball");
 
             id.Add(new Renderer(m_Texture));
-            id.Add(new Collider(new Rectangle()));
+            //id.Add(new Collider(new Shape(Shape.Type.Rectangle, 1, 1)));
         }
     }
 }
