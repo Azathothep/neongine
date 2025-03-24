@@ -6,13 +6,13 @@ namespace neongine {
     {
         public (Shape.Type, Shape.Type) Shapes => (Shape.Type.Circle, Shape.Type.Circle);
 
-        public bool Collide(Point p1, Collider c1, Point p2, Collider c2, out Collision collision)
+        public bool Collide(Collidable collidable1, Collidable collidable2, out Collision collision)
         {
-            Vector3 difference = p1.WorldPosition - p2.WorldPosition;
+            Vector3 difference = collidable1.Point.WorldPosition - collidable2.Point.WorldPosition;
             difference.Z = 0;
             float distanceSqr = difference.LengthSquared();
 
-            float radiuses = c1.Width * p1.WorldScale.X + c2.Width * p2.WorldScale.X;
+            float radiuses = collidable1.Collider.Width * collidable1.Point.WorldScale.X + collidable2.Collider.Width * collidable2.Point.WorldScale.X;
             float radiusesSqr = radiuses * radiuses;
 
             if (distanceSqr > radiusesSqr) {
@@ -20,7 +20,7 @@ namespace neongine {
                 return false;
             }
 
-            collision = new Collision(p1.EntityID, p1, c1, p2.EntityID, p2, c2);
+            collision = new Collision(collidable1, collidable2);
             return true;
         }
     }

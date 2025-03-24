@@ -5,11 +5,15 @@ namespace neongine
 {
     public class Collision
     {
-        private ((EntityID id, Point point, Collider collider), (EntityID id, Point point, Collider collider)) m_Datas;
-        public ((EntityID id, Point point, Collider collider), (EntityID id, Point point, Collider collider)) Datas => m_Datas;
+        private Collidable m_Collidable1;
+        private Collidable m_Collidable2;
 
-        public Collision(EntityID id1, Point p1, Collider c1, EntityID id2, Point p2, Collider c2) {
-            m_Datas = ((id1, p1, c1), (id2, p2, c2));
+        public Collidable Collidable1 => m_Collidable1;
+        public Collidable Collidable2 => m_Collidable2;
+
+        public Collision(Collidable collidable1, Collidable collidable2) {
+            m_Collidable1 = collidable1;
+            m_Collidable2 = collidable2;
         }
     }
 }

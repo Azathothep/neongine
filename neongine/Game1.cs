@@ -28,6 +28,8 @@ namespace neongine
             Content.RootDirectory = "Content";
             IsMouseVisible = true;
             RootDirectory = Content.RootDirectory;
+
+            // Debugger.Launch();
         }
 
         protected override void Initialize()

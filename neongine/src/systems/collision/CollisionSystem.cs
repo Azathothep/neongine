@@ -5,53 +5,10 @@ using neon;
 using System;
 using System.Collections.Generic;
 using Microsoft.Xna.Framework;
-using System.Diagnostics;
 using System.Linq;
 
 namespace neongine
 {
-    public struct Bound {
-        public float X;
-        public float Y;
-        public float Width;
-        public float Height;
-
-        public Bound(float x, float y, float width, float height) {
-            this.X = x;
-            this.Y = y;
-            this.Width = width;
-            this.Height = height;
-        }
-
-        public static Bound Get(Shape shape, Vector2 size, float rotation) {
-            switch (shape.ShapeType) {
-                case Shape.Type.Circle:
-                    float radius = shape.Width * size.X;
-                    return new Bound((int)-radius, (int)-radius, (int)radius * 2, (int)radius * 2);
-                default:
-                    Vector2[] points = Shape.RotatePoints(shape, size, rotation);
-                    
-                    float xMin = float.MaxValue;
-                    float xMax = float.MinValue;
-                    float yMin = float.MaxValue;
-                    float yMax = float.MinValue;
-
-                    foreach (var point in points) {
-                        if (point.X < xMin)
-                            xMin = point.X;
-                        if (point.X > xMax)
-                            xMax = point.X;
-                        if (point.Y < yMin)
-                            yMin = point.Y;
-                        if (point.Y > yMax)
-                            yMax = point.Y;                    
-                    }
-
-                    return new Bound(xMin, yMin, xMax - xMin, yMax - yMin);
-            }
-        }
-    }
-
     [DoNotSerialize]
     public class CollisionSystem : IUpdateSystem, IDrawSystem
     {
@@ -72,21 +29,22 @@ namespace neongine
         private Bound[] m_LastBounds = new Bound[0];
 
         private HashSet<EntityID> m_IsColliding = new();
-        private Dictionary<(EntityID, EntityID), Collision> m_LastCollisions = new();
+        private Dictionary<(EntityID, EntityID), Collision> m_LastCollisionPairs = new();
+        private Dictionary<(EntityID, EntityID), Collision> m_LastTriggerPairs = new();
 
         private Dictionary<EntityID, List<Action<Collision>>> m_OnColliderEnter = new();
-        private Dictionary<EntityID, List<Action<Collision>>> m_OnColliderExit = new();
+        private Dictionary<EntityID, List<Action<EntityID>>> m_OnColliderExit = new();
         private Dictionary<EntityID, List<Action<Collision>>> m_OnTriggerEnter = new();
-        private Dictionary<EntityID, List<Action<Collision>>> m_OnTriggerExit = new();
+        private Dictionary<EntityID, List<Action<EntityID>>> m_OnTriggerExit = new();
 
         public static void OnColliderEnter(EntityID id, Action<Collision> action) => SubscribeEvent(m_Instance.m_OnColliderEnter, id, action);
-        public static void OnColliderExit(EntityID id, Action<Collision> action) => SubscribeEvent(m_Instance.m_OnColliderExit, id, action);
+        public static void OnColliderExit(EntityID id, Action<EntityID> action) => SubscribeEvent(m_Instance.m_OnColliderExit, id, action);
         public static void OnTriggerEnter(EntityID id, Action<Collision> action) => SubscribeEvent(m_Instance.m_OnTriggerEnter, id, action);
-        public static void OnTriggerExit(EntityID id, Action<Collision> action) => SubscribeEvent(m_Instance.m_OnTriggerExit, id, action);
+        public static void OnTriggerExit(EntityID id, Action<EntityID> action) => SubscribeEvent(m_Instance.m_OnTriggerExit, id, action);
 
-        private static void SubscribeEvent(Dictionary<EntityID, List<Action<Collision>>> dictionary, EntityID id, Action<Collision> action) {
-            if (!dictionary.TryGetValue(id, out List<Action<Collision>> actions)) {
-                actions = new List<Action<Collision>>();
+        private static void SubscribeEvent<T>(Dictionary<EntityID, List<T>> dictionary, EntityID id, T action) {
+            if (!dictionary.TryGetValue(id, out List<T> actions)) {
+                actions = new List<T>();
                 dictionary.Add(id, actions);
             }
 
@@ -105,100 +63,112 @@ namespace neongine
 
         public void Update(TimeSpan timeSpan)
         {
-            HashSet<EntityID> isColliding = new();
-            Dictionary<(EntityID, EntityID), Collision> collisions = new();
+            m_QueryResultArray = QueryBuilder.Get(m_Query, QueryType.Cached, QueryResultMode.Unsafe).ToArray(); // Remove TOARRAY
 
-            m_QueryResultArray = QueryBuilder.Get(m_Query, QueryType.Cached, QueryResultMode.Unsafe).ToArray();
-
-            m_LastBounds = new Bound[m_QueryResultArray.Length];
+            Collidable[] collidables = new Collidable[m_QueryResultArray.Length];
+            Bound[] bounds = new Bound[m_QueryResultArray.Length];
 
             for (int i = 0; i < m_QueryResultArray.Length; i++) {
-                (EntityID _, Point p, Collider c) = m_QueryResultArray[i];
-                m_LastBounds[i] = Bound.Get(c.Shape, c.Size * p.WorldScale, p.WorldRotation);
+                (EntityID id, Point p, Collider c) = m_QueryResultArray[i];
+                bounds[i] = Bound.Get(c.Shape, p.WorldPosition2D, c.Size * p.WorldScale, p.WorldRotation);
+                collidables[i] = new Collidable(id, p, c);
             }
 
-            (EntityID, Point, Collider, Bound)[][] partitions = m_SpacePartitioner.Partition(m_QueryResultArray, m_LastBounds);
+            (Collidable[][] partitions, Bound[][] pBounds) = m_SpacePartitioner.Partition(collidables, bounds);
 
-            foreach (var partition in partitions) {
-                for (int i = 0; i + 1 < partition.Length; i++) {
-                    (EntityID id1, Point p1, Collider c1, Bound b1) = partition[i];
-                    (EntityID id2, Point p2, Collider c2, Bound b2) = partition[i + 1];
+            List<Collision> collisions = new();
 
-                    bool crossingBounds = CrossBounds(p1, b1, p2, b2);
-                    Debug.WriteLine($"Bounds crossing : {crossingBounds}");
-                    if (crossingBounds == false)
-                        continue;
-                        
-                    bool collide = m_CollisionProcessor.Collide(p1, c1, p2, c2, out Collision collision);
-
-                    if (collide) {
-                        Debug.WriteLine($"Collision detected for {c1.Shape.ShapeType} crossing {c2.Shape.ShapeType}");
-
-                        isColliding.Add(id1);
-                        isColliding.Add(id2);
-
-                        collisions.Add((id1, id2), collision);
-                    }
-                }
+            for (int i = 0; i < partitions.Length; i++) {
+                IEnumerable<Collision> partCollisions = m_CollisionProcessor.GetCollisions(partitions[i], pBounds[i]);
+                collisions.AddRange(partCollisions);
             }
+
+            Dictionary<(EntityID, EntityID), Collision> currentCollisionsPairs;
+            Dictionary<(EntityID, EntityID), Collision> currentTriggersPairs;
+            HashSet<EntityID> isColliding;
+
+            GetCollisionPairs(collisions, out currentCollisionsPairs, out currentTriggersPairs, out isColliding);
 
             foreach (var collision in collisions) {
-                (EntityID id1, EntityID id2) = collision.Key;
-                if (!m_LastCollisions.TryGetValue((id1, id2), out Collision _)
-                    && !m_LastCollisions.TryGetValue((id2, id1), out Collision _)) {
-
-                    if (collision.Value.Datas.Item1.collider.IsTrigger || collision.Value.Datas.Item2.collider.IsTrigger) {
-                        if (m_OnTriggerEnter.TryGetValue(id1, out List<Action<Collision>> onTriggerEnterId1))
-                            foreach (var action in onTriggerEnterId1) action?.Invoke(collision.Value);
-                                
-                        if (m_OnTriggerEnter.TryGetValue(id2, out List<Action<Collision>> onTriggerEnterId2))
-                            foreach (var action in onTriggerEnterId2) action?.Invoke(collision.Value);
-                    } else {
-                        if (m_OnColliderEnter.TryGetValue(id1, out List<Action<Collision>> onCollisionEnterId1))
-                            foreach (var action in onCollisionEnterId1) action?.Invoke(collision.Value);
-                                
-                        if (m_OnColliderEnter.TryGetValue(id2, out List<Action<Collision>> onCollisionEnterId2))
-                            foreach (var action in onCollisionEnterId2) action?.Invoke(collision.Value);
-                    }
-                }
+                if (!collision.Collidable1.Collider.IsTrigger && !collision.Collidable2.Collider.IsTrigger)
+                    m_CollisionResolver.Resolve(collision);
             }
 
-            foreach (var lastCollision in m_LastCollisions) {
-                (EntityID id1, EntityID id2) = lastCollision.Key;
-                if (!collisions.TryGetValue((id1, id2), out Collision _)
-                    && !collisions.TryGetValue((id2, id1), out Collision _)) {
+            TriggerEvents(currentTriggersPairs, currentCollisionsPairs);
 
-                    if (lastCollision.Value.Datas.Item1.collider.IsTrigger || lastCollision.Value.Datas.Item2.collider.IsTrigger) {
-                        if (m_OnTriggerExit.TryGetValue(id1, out List<Action<Collision>> onTriggerExitId1))
-                            foreach (var action in onTriggerExitId1) action?.Invoke(lastCollision.Value);
-                                
-                        if (m_OnTriggerExit.TryGetValue(id2, out List<Action<Collision>> onTriggerExitId2))
-                            foreach (var action in onTriggerExitId2) action?.Invoke(lastCollision.Value);
-                    } else {
-                        if (m_OnColliderExit.TryGetValue(id1, out List<Action<Collision>> onCollisionExitId1))
-                            foreach (var action in onCollisionExitId1) action?.Invoke(lastCollision.Value);
-                                
-                        if (m_OnColliderExit.TryGetValue(id2, out List<Action<Collision>> onCollisionExitId2))
-                            foreach (var action in onCollisionExitId2) action?.Invoke(lastCollision.Value);
-                    }
-                }
-            }
-
-            foreach (var collision in collisions) {
-                if (!collision.Value.Datas.Item1.collider.IsTrigger && !collision.Value.Datas.Item2.collider.IsTrigger)
-                m_CollisionResolver.Resolve(collision.Value);
-            }
-
+            m_LastTriggerPairs = currentTriggersPairs;
+            m_LastCollisionPairs = currentCollisionsPairs;
             m_IsColliding = isColliding;
-            m_LastCollisions = collisions;
+
+            m_LastBounds = bounds;
         }
 
-        private bool CrossBounds(Point p1, Bound b1, Point p2, Bound b2) {
-            (Point lP, Bound lB, Point rP, Bound rB) = p1.WorldPosition.X + b1.X < p2.WorldPosition.X + b2.X ? (p1, b1, p2, b2) : (p2, b2, p1, b1);
-            (Point tP, Bound tB, Point bP, Bound bB) = p1.WorldPosition.Y + b1.Y < p2.WorldPosition.Y + b2.Y ? (p1, b1, p2, b2) : (p2, b2, p1, b1);
+        private void GetCollisionPairs(List<Collision> collisions, out Dictionary<(EntityID, EntityID), Collision> currentCollisionsPairs, out Dictionary<(EntityID, EntityID), Collision> currentTriggersPairs, out HashSet<EntityID> isColliding) {
+            currentTriggersPairs = new();
+            currentCollisionsPairs = new();
+            isColliding = new();
+            
+            foreach (var collision in collisions) {
+                (EntityID id1, EntityID id2) = (collision.Collidable1.EntityID, collision.Collidable2.EntityID);
 
-            return ((rP.WorldPosition.X + rB.X) <= (lP.WorldPosition.X + lB.Width / 2))
-            && ((bP.WorldPosition.Y + bB.Y) <= (tP.WorldPosition.Y + tB.Height / 2));
+                if (collision.Collidable1.Collider.IsTrigger || collision.Collidable2.Collider.IsTrigger)
+                    currentTriggersPairs.Add((id1, id2), collision);
+                else
+                    currentCollisionsPairs.Add((id1, id2), collision);
+
+                isColliding.Add(id1);
+                isColliding.Add(id2);
+            }
+        }
+
+        private void TriggerEvents(Dictionary<(EntityID, EntityID), Collision> currentTriggersPairs, Dictionary<(EntityID, EntityID), Collision> currentCollisionsPairs) {            
+            Collision collision;
+
+            foreach (var currentCollision in currentCollisionsPairs) {
+                (EntityID id1, EntityID id2) = currentCollision.Key;
+
+                if (!m_LastCollisionPairs.TryGetValue((id1, id2), out collision) && !m_LastCollisionPairs.TryGetValue((id2, id1), out collision))
+                    TriggerEnterEvents(id1, id2, collision, m_OnColliderEnter);
+            }
+
+            foreach (var currentTrigger in currentTriggersPairs) {
+                (EntityID id1, EntityID id2) = currentTrigger.Key;
+
+                if (!m_LastTriggerPairs.TryGetValue((id1, id2), out collision) && !m_LastTriggerPairs.TryGetValue((id2, id1), out collision))
+                    TriggerEnterEvents(id1, id2, collision, m_OnTriggerEnter);
+            }
+
+            // COLLIDER EXIT
+            foreach (var lastCollision in m_LastCollisionPairs) {
+                (EntityID id1, EntityID id2) = lastCollision.Key;
+
+                if (!currentCollisionsPairs.ContainsKey((id1, id2)) && !currentCollisionsPairs.ContainsKey((id2, id1)))
+                    TriggerExitEvents(id1, id2, m_OnColliderExit);
+            }
+
+            // TRIGGER EXIT
+            foreach (var lastTrigger in m_LastTriggerPairs) {
+                (EntityID id1, EntityID id2) = lastTrigger.Key; 
+
+                if (!currentTriggersPairs.ContainsKey((id1, id2)) && !currentTriggersPairs.ContainsKey((id2, id1)))
+                    TriggerExitEvents(id1, id2, m_OnTriggerExit);
+            }
+        }
+
+        private void TriggerEnterEvents(EntityID id1, EntityID id2, Collision collision, Dictionary<EntityID, List<Action<Collision>>> onTrigger) {
+            if (onTrigger.TryGetValue(id1, out var actions1))
+                foreach (var action in actions1) action?.Invoke(collision);
+                        
+            if (onTrigger.TryGetValue(id2, out var actions2))
+                foreach (var action in actions2) action?.Invoke(collision);
+        }
+
+        private void TriggerExitEvents(EntityID id1, EntityID id2, Dictionary<EntityID, List<Action<EntityID>>> onTrigger) {
+            if (onTrigger.TryGetValue(id1, out var actions1))
+                foreach (var action in actions1) action?.Invoke(id2);
+                        
+            if (onTrigger.TryGetValue(id2, out var actions2))
+                foreach (var action in actions2) action?.Invoke(id1);
         }
 
         public void Draw()

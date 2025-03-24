@@ -63,6 +63,9 @@ namespace neongine
             get => m_WorldPosition;
             set => LocalPosition = (value.Rotate(-m_ParentWorldRotation) - m_ParentWorldPosition) / m_ParentWorldScale.ToVector3();
         }
+        public Vector2 WorldPosition2D {
+            get => new Vector2(WorldPosition.X, WorldPosition.Y);
+        }
         public float WorldRotation
         {
             get => m_WorldRotation;

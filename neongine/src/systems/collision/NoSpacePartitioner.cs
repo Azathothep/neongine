@@ -9,18 +9,21 @@ namespace neongine
 {
     public class NoSpacePartitioner : ISpacePartitioner
     {
-        public (EntityID, Point, Collider, Bound)[][] Partition((EntityID, Point, Collider)[] content, Bound[] bounds)
+        public (Collidable[][], Bound[][]) Partition(Collidable[] collidables, Bound[] bounds)
         {
-            (EntityID, Point, Collider, Bound)[][] partition = new (EntityID, Point, Collider, Bound)[1][];
+            Collidable[][] partition = new Collidable[1][];
 
-            partition[0] = new (EntityID, Point, Collider, Bound)[content.Count()];
+            partition[0] = new Collidable[collidables.Count()];
 
-            for (int i = 0; i < content.Length; i++) {
-                (EntityID id, Point p, Collider c) = content[i];
-                partition[0][i] = (id, p, c, bounds[i]);
+            Bound[][] partitionedBounds = new Bound[1][];
+            partitionedBounds[0] = new Bound[collidables.Count()];
+
+            for (int i = 0; i < collidables.Length; i++) {
+                partition[0][i] = collidables[i];
+                partitionedBounds[0][i] = Bound.Get(collidables[i].Collider.Shape, collidables[i].Point.WorldPosition2D, collidables[i].Collider.Size * collidables[i].Point.WorldScale, collidables[i].Point.WorldRotation);
             }
 
-            return partition;
+            return (partition, partitionedBounds);
         }
     }
 }
