@@ -10,6 +10,48 @@ using System.Linq;
 
 namespace neongine
 {
+    public struct Bound {
+        public float X;
+        public float Y;
+        public float Width;
+        public float Height;
+
+        public Bound(float x, float y, float width, float height) {
+            this.X = x;
+            this.Y = y;
+            this.Width = width;
+            this.Height = height;
+        }
+
+        public static Bound Get(Shape shape, Vector2 size, float rotation) {
+            switch (shape.ShapeType) {
+                case Shape.Type.Circle:
+                    float radius = shape.Width * size.X;
+                    return new Bound((int)-radius, (int)-radius, (int)radius * 2, (int)radius * 2);
+                default:
+                    Vector2[] points = Shape.RotatePoints(shape, size, rotation);
+                    
+                    float xMin = float.MaxValue;
+                    float xMax = float.MinValue;
+                    float yMin = float.MaxValue;
+                    float yMax = float.MinValue;
+
+                    foreach (var point in points) {
+                        if (point.X < xMin)
+                            xMin = point.X;
+                        if (point.X > xMax)
+                            xMax = point.X;
+                        if (point.Y < yMin)
+                            yMin = point.Y;
+                        if (point.Y > yMax)
+                            yMax = point.Y;                    
+                    }
+
+                    return new Bound(xMin, yMin, xMax - xMin, yMax - yMin);
+            }
+        }
+    }
+
     [DoNotSerialize]
     public class CollisionSystem : IUpdateSystem, IDrawSystem
     {
@@ -25,7 +67,9 @@ namespace neongine
 
         private SpriteBatch m_SpriteBatch;
 
-        private IEnumerable<(EntityID, Point, Collider)> m_QueryResult;
+        private (EntityID, Point, Collider)[] m_QueryResultArray;
+
+        private Bound[] m_LastBounds = new Bound[0];
 
         private HashSet<EntityID> m_IsColliding = new();
         private Dictionary<(EntityID, EntityID), Collision> m_LastCollisions = new();
@@ -64,15 +108,27 @@ namespace neongine
             HashSet<EntityID> isColliding = new();
             Dictionary<(EntityID, EntityID), Collision> collisions = new();
 
-            m_QueryResult = QueryBuilder.Get(m_Query, QueryType.Cached, QueryResultMode.Unsafe);
+            m_QueryResultArray = QueryBuilder.Get(m_Query, QueryType.Cached, QueryResultMode.Unsafe).ToArray();
 
-            (EntityID, Point, Collider)[][] partitions = m_SpacePartitioner.Partition(m_QueryResult);
+            m_LastBounds = new Bound[m_QueryResultArray.Length];
+
+            for (int i = 0; i < m_QueryResultArray.Length; i++) {
+                (EntityID _, Point p, Collider c) = m_QueryResultArray[i];
+                m_LastBounds[i] = Bound.Get(c.Shape, c.Size * p.WorldScale, p.WorldRotation);
+            }
+
+            (EntityID, Point, Collider, Bound)[][] partitions = m_SpacePartitioner.Partition(m_QueryResultArray, m_LastBounds);
 
             foreach (var partition in partitions) {
                 for (int i = 0; i + 1 < partition.Length; i++) {
-                    (EntityID id1, Point p1, Collider c1) = partition[i];
-                    (EntityID id2, Point p2, Collider c2) = partition[i + 1];
+                    (EntityID id1, Point p1, Collider c1, Bound b1) = partition[i];
+                    (EntityID id2, Point p2, Collider c2, Bound b2) = partition[i + 1];
 
+                    bool crossingBounds = CrossBounds(p1, b1, p2, b2);
+                    Debug.WriteLine($"Bounds crossing : {crossingBounds}");
+                    if (crossingBounds == false)
+                        continue;
+                        
                     bool collide = m_CollisionProcessor.Collide(p1, c1, p2, c2, out Collision collision);
 
                     if (collide) {
@@ -137,13 +193,22 @@ namespace neongine
             m_LastCollisions = collisions;
         }
 
+        private bool CrossBounds(Point p1, Bound b1, Point p2, Bound b2) {
+            (Point lP, Bound lB, Point rP, Bound rB) = p1.WorldPosition.X + b1.X < p2.WorldPosition.X + b2.X ? (p1, b1, p2, b2) : (p2, b2, p1, b1);
+            (Point tP, Bound tB, Point bP, Bound bB) = p1.WorldPosition.Y + b1.Y < p2.WorldPosition.Y + b2.Y ? (p1, b1, p2, b2) : (p2, b2, p1, b1);
+
+            return ((rP.WorldPosition.X + rB.X) <= (lP.WorldPosition.X + lB.Width / 2))
+            && ((bP.WorldPosition.Y + bB.Y) <= (tP.WorldPosition.Y + tB.Height / 2));
+        }
+
         public void Draw()
         {
 #if DRAW_COLLISIONS
 
             m_SpriteBatch.Begin();
 
-            foreach ((EntityID id, Point p, Collider c) in m_QueryResult) {
+            for (int i = 0; i < m_QueryResultArray.Length; i++) {
+                (EntityID id, Point p, Collider c) = m_QueryResultArray[i];
                 switch (c.Shape.ShapeType) {
                     case Shape.Type.Circle:
                         MonoGame.Primitives2D.DrawCircle(m_SpriteBatch,
@@ -168,6 +233,15 @@ namespace neongine
                     default:
                         break;
                 }
+
+                Bound bound = m_LastBounds[i];
+                MonoGame.Primitives2D.DrawRectangle(m_SpriteBatch,
+                                                        new Rectangle((int)(p.WorldPosition.X + bound.X),
+                                                                    (int)(p.WorldPosition.Y + bound.Y),
+                                                                    (int)bound.Width,
+                                                                    (int)bound.Height),
+                                                        0.0f,
+                                                        Color.Blue);
             }
 
             m_SpriteBatch.End();

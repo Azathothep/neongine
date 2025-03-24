@@ -9,16 +9,15 @@ namespace neongine
 {
     public class NoSpacePartitioner : ISpacePartitioner
     {
-        public (EntityID, Point, Collider)[][] Partition(IEnumerable<(EntityID, Point, Collider)> m_Content)
+        public (EntityID, Point, Collider, Bound)[][] Partition((EntityID, Point, Collider)[] content, Bound[] bounds)
         {
-            (EntityID, Point, Collider)[][] partition = new (EntityID, Point, Collider)[1][];
+            (EntityID, Point, Collider, Bound)[][] partition = new (EntityID, Point, Collider, Bound)[1][];
 
-            partition[0] = new (EntityID, Point, Collider)[m_Content.Count()];
+            partition[0] = new (EntityID, Point, Collider, Bound)[content.Count()];
 
-            int i = 0;
-            foreach ((EntityID id, Point p, Collider c) in m_Content) {
-                partition[0][i] = (id, p, c);
-                i++;
+            for (int i = 0; i < content.Length; i++) {
+                (EntityID id, Point p, Collider c) = content[i];
+                partition[0][i] = (id, p, c, bounds[i]);
             }
 
             return partition;
