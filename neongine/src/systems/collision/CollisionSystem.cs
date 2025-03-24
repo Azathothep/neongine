@@ -24,9 +24,9 @@ namespace neongine
 
         private SpriteBatch m_SpriteBatch;
 
-        private (EntityID, Point, Collider)[] m_QueryResultArray;
+        private IEnumerable<(EntityID, Point, Collider)> m_QueryResult;
 
-        private Bound[] m_LastBounds = new Bound[0];
+        private Collidable[] m_LastCollidables = new Collidable[0];
 
         private HashSet<EntityID> m_IsColliding = new();
         private Dictionary<(EntityID, EntityID), Collision> m_LastCollisionPairs = new();
@@ -63,23 +63,23 @@ namespace neongine
 
         public void Update(TimeSpan timeSpan)
         {
-            m_QueryResultArray = QueryBuilder.Get(m_Query, QueryType.Cached, QueryResultMode.Unsafe).ToArray(); // Remove TOARRAY
+            m_QueryResult = QueryBuilder.Get(m_Query, QueryType.Cached, QueryResultMode.Unsafe);
 
-            Collidable[] collidables = new Collidable[m_QueryResultArray.Length];
-            Bound[] bounds = new Bound[m_QueryResultArray.Length];
+            Collidable[] collidables = new Collidable[m_QueryResult.Count()];
 
-            for (int i = 0; i < m_QueryResultArray.Length; i++) {
-                (EntityID id, Point p, Collider c) = m_QueryResultArray[i];
-                bounds[i] = Bound.Get(c.Shape, p.WorldPosition2D, c.Size * p.WorldScale, p.WorldRotation);
-                collidables[i] = new Collidable(id, p, c);
+            int i = 0;
+            foreach ((EntityID id, Point p, Collider c) in m_QueryResult) {
+                Bound bound = Bound.Get(c.Shape, p.WorldPosition2D, c.Size * p.WorldScale, p.WorldRotation);
+                collidables[i] = new Collidable(id, p, c, bound);
+                i++;
             }
 
-            (Collidable[][] partitions, Bound[][] pBounds) = m_SpacePartitioner.Partition(collidables, bounds);
+            Collidable[][] partitions = m_SpacePartitioner.Partition(collidables);
 
             List<Collision> collisions = new();
 
-            for (int i = 0; i < partitions.Length; i++) {
-                IEnumerable<Collision> partCollisions = m_CollisionProcessor.GetCollisions(partitions[i], pBounds[i]);
+            for (int j = 0; j < partitions.Length; j++) {
+                IEnumerable<Collision> partCollisions = m_CollisionProcessor.GetCollisions(partitions[j]);
                 collisions.AddRange(partCollisions);
             }
 
@@ -96,11 +96,10 @@ namespace neongine
 
             TriggerEvents(currentTriggersPairs, currentCollisionsPairs);
 
+            m_LastCollidables = collidables;
             m_LastTriggerPairs = currentTriggersPairs;
             m_LastCollisionPairs = currentCollisionsPairs;
             m_IsColliding = isColliding;
-
-            m_LastBounds = bounds;
         }
 
         private void GetCollisionPairs(List<Collision> collisions, out Dictionary<(EntityID, EntityID), Collision> currentCollisionsPairs, out Dictionary<(EntityID, EntityID), Collision> currentTriggersPairs, out HashSet<EntityID> isColliding) {
@@ -124,6 +123,7 @@ namespace neongine
         private void TriggerEvents(Dictionary<(EntityID, EntityID), Collision> currentTriggersPairs, Dictionary<(EntityID, EntityID), Collision> currentCollisionsPairs) {            
             Collision collision;
 
+            // COLLIDER ENTER
             foreach (var currentCollision in currentCollisionsPairs) {
                 (EntityID id1, EntityID id2) = currentCollision.Key;
 
@@ -131,6 +131,7 @@ namespace neongine
                     TriggerEnterEvents(id1, id2, collision, m_OnColliderEnter);
             }
 
+            // TRIGGER ENTER
             foreach (var currentTrigger in currentTriggersPairs) {
                 (EntityID id1, EntityID id2) = currentTrigger.Key;
 
@@ -177,8 +178,8 @@ namespace neongine
 
             m_SpriteBatch.Begin();
 
-            for (int i = 0; i < m_QueryResultArray.Length; i++) {
-                (EntityID id, Point p, Collider c) = m_QueryResultArray[i];
+            foreach (Collidable collidable in m_LastCollidables) {
+                (EntityID id, Point p, Collider c, Bound b) = (collidable.EntityID, collidable.Point, collidable.Collider, collidable.Bound);
                 switch (c.Shape.ShapeType) {
                     case Shape.Type.Circle:
                         MonoGame.Primitives2D.DrawCircle(m_SpriteBatch,
@@ -204,12 +205,11 @@ namespace neongine
                         break;
                 }
 
-                Bound bound = m_LastBounds[i];
                 MonoGame.Primitives2D.DrawRectangle(m_SpriteBatch,
-                                                        new Rectangle((int)(p.WorldPosition.X + bound.X),
-                                                                    (int)(p.WorldPosition.Y + bound.Y),
-                                                                    (int)bound.Width,
-                                                                    (int)bound.Height),
+                                                        new Rectangle((int)(p.WorldPosition.X + b.X),
+                                                                    (int)(p.WorldPosition.Y + b.Y),
+                                                                    (int)b.Width,
+                                                                    (int)b.Height),
                                                         0.0f,
                                                         Color.Blue);
             }

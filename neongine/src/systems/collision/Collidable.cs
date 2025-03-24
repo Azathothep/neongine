@@ -13,10 +13,14 @@ namespace neongine {
         private Collider m_Collider;
         public Collider Collider => m_Collider;
 
-        public Collidable(EntityID entityID, Point point, Collider collider) {
+        private Bound m_Bound;
+        public Bound Bound => m_Bound;
+
+        public Collidable(EntityID entityID, Point point, Collider collider, Bound bound) {
             m_EntityID = entityID;
             m_Point = point;
             m_Collider = collider;
+            m_Bound = bound;
         }
 
     }

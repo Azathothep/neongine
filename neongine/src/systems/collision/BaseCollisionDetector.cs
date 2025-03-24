@@ -14,19 +14,19 @@ namespace neongine
                 m_CollisionDetectors.Add(detector.Shapes, detector);
         }
 
-        public IEnumerable<Collision> GetCollisions(Collidable[] collidables, Bound[] bounds)
+        public IEnumerable<Collision> GetCollisions(Collidable[] collidables)
         {
-            (int, int)[] crossingBounds = AABBCollisions(bounds);
+            (int, int)[] crossingBounds = AABBCollisions(collidables);
 
             return SATCollisions(collidables, crossingBounds);
         }
 
-        private (int, int)[] AABBCollisions(Bound[] bounds) {
+        private (int, int)[] AABBCollisions(Collidable[] collidables) {
             List<(int, int)> crossingBounds = new();
 
-            for (int i = 0; i + 1 < bounds.Length; i++) {
-                for (int y = i + 1; y < bounds.Length; y++) {
-                    bool isCrossing = Bound.IsCrossing(bounds[i], bounds[y]);
+            for (int i = 0; i + 1 < collidables.Length; i++) {
+                for (int y = i + 1; y < collidables.Length; y++) {
+                    bool isCrossing = Bound.IsCrossing(collidables[i].Bound, collidables[y].Bound);
                     
                     Debug.WriteLine($"Bounds crossing : {isCrossing}");
 
