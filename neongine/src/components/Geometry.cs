@@ -31,6 +31,11 @@ namespace neongine
             return obj is Geometry other && other.Type == this.Type && other.Width == this.Width && other.Height == this.Height;
         }
 
+        public override int GetHashCode()
+        {
+            return base.GetHashCode();
+        }
+
         public static Vector2[] RotatePoints(Geometry geometry, Vector2 size, float rotation) {
             switch (geometry.Type)
             {
