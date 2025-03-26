@@ -9,14 +9,14 @@ namespace neongine
 {
     public class NoSpacePartitioner : ISpacePartitioner
     {
-        public Collidable[][] Partition(Collidable[] collidables)
+        public int[][] Partition(Point[] points, ColliderBounds[] colliderBounds)
         {
-            Collidable[][] partition = new Collidable[1][];
+            int[][] partition = new int[1][];
 
-            partition[0] = new Collidable[collidables.Count()];
+            partition[0] = new int[points.Count()];
 
-            for (int i = 0; i < collidables.Length; i++) {
-                partition[0][i] = collidables[i];
+            for (int i = 0; i < points.Length; i++) {
+                partition[0][i] = i;
             }
 
             return partition;

@@ -295,10 +295,15 @@ namespace neongine
         {
             IComponent[] components = entityID.GetAll(); // Get all components
 
-            ComponentData[] componentDatas = new ComponentData[components.Length];
+            List<ComponentData> componentDatas = new List<ComponentData>(components.Length);
 
-            for (int i = 0; i < components.Length; i++)
-                componentDatas[i] = GetComponentData(components[i]);
+            for (int i = 0; i < components.Length; i++) {
+                Type componentType = components[i].GetType();
+                if (componentType.GetCustomAttribute<DoNotSerializeAttribute>() != null)
+                    continue;
+                
+                componentDatas.Add(GetComponentData(components[i], componentType));
+            }
 
             EntityID[] children = new EntityID[0]; // Get all children
 
@@ -311,20 +316,20 @@ namespace neongine
             {
                 id = (uint)entityID,
                 active = entityID.active,
-                components = componentDatas,
+                components = componentDatas.ToArray(),
                 children = childrenDatas
             };
 
             return entityData;
         }
 
-        private static ComponentData GetComponentData(IComponent component)
+        private static ComponentData GetComponentData(IComponent component, Type type)
         {
             ComponentData componentData = new ComponentData()
             {
                 id = (uint)component.EntityID,
                 active = component.EntityID.active,
-                typeName = component.GetType().FullName,
+                typeName = type.FullName,
                 serializedData = Serializer.SerializeComponent(component)
             };
 

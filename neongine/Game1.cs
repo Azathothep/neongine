@@ -45,11 +45,12 @@ namespace neongine
 
             // m_SpriteFont = Content.Load<SpriteFont>("mainFont");
 
-            // LoadScene();
 
             Neongine.LoadCommonSystems(_spriteBatch);
 
             Neongine.LoadEditorSystems(_spriteBatch);
+            
+            // LoadScene();
 
             InitializeContent();
         }
@@ -86,8 +87,13 @@ namespace neongine
             entityID_1.Add<Draggable>();
             entityID_2.Add<Draggable>();
 
-            entityID_1.Add(new Collider(new Shape(Shape.Type.Circle), 35, true));
-            entityID_2.Add(new Collider(new Shape(Shape.Type.Circle), 50));
+            entityID_1.Add(new AngleVelocity(1.0f));
+            entityID_2.Add(new AngleVelocity(2.0f));
+
+            entityID_1.Add(new Collider(new Geometry(GeometryType.Rectangle), 35, true));
+            entityID_2.Add(new Collider(new Geometry(GeometryType.Rectangle), 50));
+
+            Systems.Add(new AngleVelocitySystem());
 
             CollisionSystem.OnTriggerEnter(entityID_1, (col) => Debug.WriteLine($"entity 1 entering trigger !"));
             CollisionSystem.OnTriggerExit(entityID_1, (col) => Debug.WriteLine($"entity 1 exiting trigger !"));

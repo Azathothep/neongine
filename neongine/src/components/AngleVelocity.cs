@@ -11,8 +11,11 @@ namespace neongine
     {
         public EntityID EntityID { get ; private set ; }
 
+        [Serialize]
         private float m_Value;
         public float Value => m_Value;
+
+        private AngleVelocity() {}
 
         public AngleVelocity(float speed)
         {

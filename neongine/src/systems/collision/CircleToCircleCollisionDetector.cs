@@ -4,15 +4,30 @@ using Microsoft.Xna.Framework;
 namespace neongine {
     public class CircleToCircleCollisionDetector : ICollisionDetector
     {
-        public (Shape.Type, Shape.Type) Shapes => (Shape.Type.Circle, Shape.Type.Circle);
+        public (GeometryType, GeometryType) Shapes => (GeometryType.Circle, GeometryType.Circle);
 
-        public bool Collide(Collidable collidable1, Collidable collidable2, out Collision collision)
+        public bool Collide(Point p1, Collider c1, Shape s1, Point p2, Collider c2, Shape s2)
         {
-            Vector3 difference = collidable1.Point.WorldPosition - collidable2.Point.WorldPosition;
+            Vector3 difference = p1.WorldPosition - p2.WorldPosition;
             difference.Z = 0;
             float distanceSqr = difference.LengthSquared();
 
-            float radiuses = collidable1.Collider.Width * collidable1.Point.WorldScale.X + collidable2.Collider.Width * collidable2.Point.WorldScale.X;
+            float radiuses = c1.Width * p1.WorldScale.X + c2.Width * p2.WorldScale.X;
+            float radiusesSqr = radiuses * radiuses;
+
+            if (distanceSqr > radiusesSqr) {
+                return false;
+            }
+            return true;
+        }
+
+        public bool Collide(Point p1, Collider c1, Shape s1, Point p2, Collider c2, Shape s2, out Collision collision)
+        {
+            Vector3 difference = p1.WorldPosition - p2.WorldPosition;
+            difference.Z = 0;
+            float distanceSqr = difference.LengthSquared();
+
+            float radiuses = c1.Width * p1.WorldScale.X + c2.Width * p2.WorldScale.X;
             float radiusesSqr = radiuses * radiuses;
 
             if (distanceSqr > radiusesSqr) {
@@ -20,7 +35,7 @@ namespace neongine {
                 return false;
             }
 
-            collision = new Collision(collidable1, collidable2);
+            collision = new Collision();
             return true;
         }
     }

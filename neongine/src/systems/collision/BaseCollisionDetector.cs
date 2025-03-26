@@ -1,67 +1,90 @@
 ﻿using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using neon;
 
 namespace neongine
 {
     public class BaseCollisionProcessor : ICollisionProcessor
     {
-        private Dictionary<(Shape.Type, Shape.Type), ICollisionDetector> m_CollisionDetectors = new();
+        private Dictionary<(GeometryType, GeometryType), ICollisionDetector> m_CollisionDetectors = new();
 
         public BaseCollisionProcessor(ICollisionDetector[] detectors) {
             foreach (var detector in detectors)
                 m_CollisionDetectors.Add(detector.Shapes, detector);
         }
 
-        public IEnumerable<Collision> GetCollisions(Collidable[] collidables)
+        public void GetCollisions(int[][] partition, Point[] points, Collider[] colliders, ColliderShape[] shapes, ColliderBounds[] bounds, out ((int, int)[], Collision[]) collisions, out (int, int)[] triggers)
         {
-            (int, int)[] crossingBounds = AABBCollisions(collidables);
+            (int, int)[] crossingBounds = AABBCollisions(partition, points, bounds);
 
-            return SATCollisions(collidables, crossingBounds);
+            SATCollisions(crossingBounds, points, colliders, shapes, out collisions, out triggers);
         }
 
-        private (int, int)[] AABBCollisions(Collidable[] collidables) {
+        private (int, int)[] AABBCollisions(int[][] partition, Point[] points, ColliderBounds[] bounds) {
             List<(int, int)> crossingBounds = new();
 
-            for (int i = 0; i + 1 < collidables.Length; i++) {
-                for (int y = i + 1; y < collidables.Length; y++) {
-                    bool isCrossing = Bound.IsCrossing(collidables[i].Bound, collidables[y].Bound);
+            for (int i = 0; i < partition.Length; i++) {
+                for (int j = 0; j < partition[i].Length; j++) {
+                    for (int k = j + 1; k < partition[i].Length; k++) {
+                        (int id1, int id2) = (partition[i][j], partition[i][k]);
+                        bool isCrossing = Bounds.Crossing(points[id1].WorldPosition, bounds[id1].Bounds, points[id2].WorldPosition, bounds[id2].Bounds);
                     
-                    Debug.WriteLine($"Bounds crossing : {isCrossing}");
+                        Debug.WriteLine($"Crossing bounds : {isCrossing}");
 
-                    if (isCrossing)
-                        crossingBounds.Add((i, y));
+                        if (isCrossing)
+                            crossingBounds.Add((id1, id2));
+                    }
                 }
             }
 
             return crossingBounds.ToArray();
         }
 
-        private List<Collision> SATCollisions(Collidable[] collidables, (int, int)[] indices) {
-            List<Collision> collisions = new();
+        private void SATCollisions((int, int)[] indices, Point[] points, Collider[] colliders, ColliderShape[] shapes, out ((int, int)[], Collision[]) collisions, out (int, int)[] triggers) {
+            List<(int, int)> collisionIndices = new();
+            List<Collision> collisionList = new();
+            List<(int, int)> triggerIndices = new();
             
             foreach ((int i1, int i2) in indices) {
-
-                if (SATCollision(collidables[i1], collidables[i2], out Collision collision)) {
-                    collisions.Add(collision);
+                if (!colliders[i1].IsTrigger && !colliders[i2].IsTrigger
+                    && SATCollision(points[i1], colliders[i1], shapes[i1].Shape, points[i2], colliders[i2], shapes[i2].Shape, out Collision collision)) {
+                    
+                    collisionIndices.Add((i1, i2));
+                    collisionList.Add(collision);
+                }
+                else if (SATCollision(points[i1], colliders[i1], shapes[i1].Shape, points[i2], colliders[i2], shapes[i2].Shape))
+                {
+                    triggerIndices.Add((i1, i2));
                 }
             }
-            
-            return collisions;
+
+            collisions = (collisionIndices.ToArray(), collisionList.ToArray());
+            triggers = triggerIndices.ToArray();
         }
 
-        private bool SATCollision(Collidable collidable1, Collidable collidable2, out Collision collision) {
+        private bool SATCollision(Point p1, Collider c1, Shape s1, Point p2, Collider c2, Shape s2) {
             ICollisionDetector detector;
             
-            if (m_CollisionDetectors.TryGetValue((collidable1.Collider.Shape.ShapeType, collidable2.Collider.Shape.ShapeType), out detector))
-                return detector.Collide(collidable1, collidable2, out collision);
-            else if ((collidable1.Collider.Shape.ShapeType != collidable2.Collider.Shape.ShapeType)
-                        && m_CollisionDetectors.TryGetValue((collidable2.Collider.Shape.ShapeType, collidable1.Collider.Shape.ShapeType), out detector))
-                return detector.Collide(collidable2, collidable1, out collision);
-
+            if (m_CollisionDetectors.TryGetValue((c1.Geometry.Type, c2.Geometry.Type), out detector))
+                return detector.Collide(p1, c1, s1, p2, c2, s1);
+            else if ((c1.Geometry.Type != c2.Geometry.Type)
+                    && m_CollisionDetectors.TryGetValue((c2.Geometry.Type, c1.Geometry.Type), out detector))
+                return detector.Collide(p2, c2, s2, p1, c1, s1);
             
-            Debug.WriteLine($"No collision detector for {collidable1.Collider.Shape.ShapeType} crossing {collidable2.Collider.Shape.ShapeType}");
+            Debug.WriteLine($"No collision detector for {c1.Geometry.Type} crossing {c2.Geometry.Type}");
+
+            return false;
+        }
+
+        private bool SATCollision(Point p1, Collider c1, Shape s1, Point p2, Collider c2, Shape s2, out Collision collision) {
+            ICollisionDetector detector;
+            
+            if (m_CollisionDetectors.TryGetValue((c1.Geometry.Type, c2.Geometry.Type), out detector))
+                return detector.Collide(p1, c1, s1, p2, c2, s1, out collision);
+            else if ((c1.Geometry.Type != c2.Geometry.Type)
+                    && m_CollisionDetectors.TryGetValue((c2.Geometry.Type, c1.Geometry.Type), out detector))
+                return detector.Collide(p2, c2, s2, p1, c1, s1, out collision);
+            
+            Debug.WriteLine($"No collision detector for {c1.Geometry.Type} crossing {c2.Geometry.Type}");
 
             collision = null;
             return false;

@@ -1,17 +1,18 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.Xna.Framework;
 
 namespace neongine
 {
-    public struct Shape
-    {
-        public enum Type {
-            Circle,
-            Rectangle
-        }
+    public enum GeometryType {
+        Circle,
+        Rectangle
+    }
 
+    public struct Geometry
+    {
         [Serialize]
-        public Type ShapeType;
+        public GeometryType Type;
 
         [Serialize]
         public float Width;
@@ -19,19 +20,24 @@ namespace neongine
         [Serialize]
         public float Height;
 
-        public Shape(Type shapeType, float width = 1, float height = 1) {
-            ShapeType = shapeType;
+        public Geometry(GeometryType type, float width = 1, float height = 1) {
+            Type = type;
             Width = width;
             Height = height;
         }
 
-        public static Vector2[] RotatePoints(Shape shape, Vector2 size, float rotation) {
-            switch (shape.ShapeType)
+        public override bool Equals(object obj)
+        {
+            return obj is Geometry other && other.Type == this.Type && other.Width == this.Width && other.Height == this.Height;
+        }
+
+        public static Vector2[] RotatePoints(Geometry geometry, Vector2 size, float rotation) {
+            switch (geometry.Type)
             {
-                case Shape.Type.Circle:
+                case GeometryType.Circle:
                     return null;
-                case Shape.Type.Rectangle:
-                    return RotateRectanglePoints(shape.Width * size.X, shape.Height * size.Y, rotation);
+                case GeometryType.Rectangle:
+                    return RotateRectanglePoints(geometry.Width * size.X, geometry.Height * size.Y, rotation);
                 default:
                     break;
             }
