@@ -20,7 +20,15 @@ namespace neongine
         [Serialize]
         public float Height;
 
-        public Geometry(GeometryType type, float width = 1, float height = 1) {
+        public Geometry(GeometryType type) : this(type, 1, 1) {
+
+        }
+
+        public Geometry(GeometryType type, float width) : this(type, width, width) {
+
+        }
+
+        public Geometry(GeometryType type, float width, float height) {
             Type = type;
             Width = width;
             Height = height;

@@ -45,14 +45,26 @@ namespace neongine
 
             // m_SpriteFont = Content.Load<SpriteFont>("mainFont");
 
-
             Neongine.LoadCommonSystems(_spriteBatch);
 
             Neongine.LoadEditorSystems(_spriteBatch);
             
+            TestBallScenes();
+
             // LoadScene();
 
-            InitializeContent();
+            // InitializeContent();
+        }
+
+        private void TestBallScenes() {
+            Texture2D ballTexture = Assets.GetAsset<Texture2D>("ball");
+
+            Bounds bounds = new Bounds(50, 50, 700, 400);
+
+            Systems.Add(new VelocitySystem(1.0f));
+            Systems.Add(new AngleVelocitySystem());
+            Systems.Add(new BallGenerationSystem(bounds));
+            Systems.Add(new BouncingBallSystem(bounds));
         }
 
         private void LoadScene() {

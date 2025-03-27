@@ -18,10 +18,7 @@ namespace neongine
         public VelocitySystem(float speed)
         {
             m_Speed = speed;
-            m_Query = new Query<Point, Velocity>(new IQueryFilter[]
-            {
-                new QueryFilter<Collider>(FilterTerm.HasNot)
-            });
+            m_Query = new Query<Point, Velocity>();
         }
 
         public void Update(TimeSpan timeSpan)
@@ -33,7 +30,7 @@ namespace neongine
                 Point p = r.Item2;
                 Velocity v = r.Item3;
 
-                p.WorldPosition = p.WorldPosition + v.velocity * m_Speed;
+                p.WorldPosition = p.WorldPosition + v.Direction * m_Speed;
             }
         }
     }

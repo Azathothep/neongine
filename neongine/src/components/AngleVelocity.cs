@@ -13,9 +13,12 @@ namespace neongine
 
         [Serialize]
         private float m_Value;
-        public float Value => m_Value;
+        public float Value {
+            get => m_Value;
+            set => m_Value = value;
+        }
 
-        private AngleVelocity() {}
+        public AngleVelocity() {}
 
         public AngleVelocity(float speed)
         {

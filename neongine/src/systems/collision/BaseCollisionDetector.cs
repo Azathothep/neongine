@@ -27,8 +27,6 @@ namespace neongine
                     for (int k = j + 1; k < partition[i].Length; k++) {
                         (int id1, int id2) = (partition[i][j], partition[i][k]);
                         bool isCrossing = Bounds.Crossing(points[id1].WorldPosition, bounds[id1].Bounds, points[id2].WorldPosition, bounds[id2].Bounds);
-                    
-                        Debug.WriteLine($"Crossing bounds : {isCrossing}");
 
                         if (isCrossing)
                             crossingBounds.Add((id1, id2));
