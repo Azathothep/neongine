@@ -20,7 +20,7 @@ namespace neongine
         {
             Systems.Add(new RenderingSystem(spriteBatch));
 
-            Systems.Add(new CollisionSystem(new NoSpacePartitioner(),
+            Systems.Add(new CollisionSystem(new QuadtreeSpacePartitioner(),
                                             new BaseCollisionProcessor(
                                             [
                                                 new CircleToCircleCollisionDetector()
