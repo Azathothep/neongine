@@ -1,17 +1,21 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Reflection;
-using System.Runtime.InteropServices;
-using System.Security.Cryptography;
+using System.Globalization;
+using System.Linq;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework.Media;
+using neon;
 
 namespace neongine {
-    public class QuadtreeSpacePartitioner : ISpacePartitioner
+    public class QuadtreeSpacePartitioner : ISpacePartitioner, IDrawSystem
     {
-        private class Quadtree {
-            private struct Leaf
+        private class Quadtree : IEnumerable<(int, int)> {
+            private class Leaf
             {
+                public int Index;
                 public Bounds Bounds;
                 public List<int> Entities;
                 public Leaf[] Children;
@@ -19,8 +23,13 @@ namespace neongine {
 
             private Leaf m_Base;
 
+            private int m_Index = 0;
+
+            private List<(int, int)> m_Enumerator;
+
             public Quadtree(Bounds bounds) {
                 m_Base = new Leaf() {
+                    Index = m_Index++,
                     Bounds = bounds,
                     Entities = new List<int>(),
                     Children = null
@@ -73,7 +82,8 @@ namespace neongine {
 
                 for (int i = 0; i < 4; i++) {
                     leaves[i] = new Leaf() {
-                        Bounds = new Bounds(parentBound.X + width * i % 2, parentBound.Y + height * (int)(i / 2), width, height),
+                        Index = m_Index++,
+                        Bounds = new Bounds(parentBound.X + (width * (i % 2)), parentBound.Y + height * (int)(i / 2), width, height),
                         Entities = new List<int>(),
                         Children = null
                     };
@@ -82,52 +92,157 @@ namespace neongine {
                 return leaves;
             }
 
-            public int[][] BuildPartition() {
-                List<int[]> partition = new();
-
-                FillPartition(m_Base, partition, []);
-
-                return partition.ToArray();
+            public void PrintEntities() {
+                //Debug.WriteLine("---------");
+                PrintEntitiesInternal(m_Base);
             }
 
-            private void FillPartition(Leaf leaf, List<int[]> partition, int[] storage) {
-                int[] indices = [.. storage, .. leaf.Entities];
+            private void PrintEntitiesInternal(Leaf leaf) {
+                //Debug.WriteLine($"[{leaf.Index}] : {leaf.Entities.Count} entities, bounds = {leaf.Bounds.X}, {leaf.Bounds.Y}, {leaf.Bounds.Width}, {leaf.Bounds.Height}");
 
-                if (leaf.Children == null) {
-                    if (indices.Length > 0) {
-                        partition.Add(indices);
-                        string indicesString = "";
-                        foreach (var indice in indices) indicesString += indice.ToString() + ", ";
-                        Debug.WriteLine("Added partition index " + (partition.Count - 1) + " with indices " + indicesString);
-                    }
-
+                if (leaf.Children == null)
                     return;
+
+                foreach (var child in leaf.Children) {
+                    PrintEntitiesInternal(child);
+                }
+            }
+
+            // public int[][] BuildPartition() {
+            //     List<int[]> partition = new();
+
+            //     FillPartition(m_Base, partition, []);
+
+            //     return partition.ToArray();
+            // }
+
+            // private void FillPartition(Leaf leaf, List<int[]> partition, int[] storage) {
+            //     int[] indices = [.. storage, .. leaf.Entities];
+
+            //     if (leaf.Children == null) {
+            //         if (indices.Length > 0) {
+            //             partition.Add(indices);
+            //             string indicesString = "";
+            //             foreach (var indice in indices) indicesString += indice.ToString() + ", ";
+            //             Debug.WriteLine("Added partition index " + (partition.Count - 1) + " with indices " + indicesString);
+            //         }
+
+            //         return;
+            //     }
+
+            //     for (int i = 0; i < leaf.Children.Length; i++) {
+            //         FillPartition(leaf.Children[i], partition, indices);
+            //     }
+            // }
+
+            public void BuildEnumerator() {
+                List<(int, int)> enumerator = new();
+
+                AddCollisionChecks(m_Base, enumerator, new int[0]);
+
+                m_Enumerator = enumerator;
+            }
+
+            private void AddCollisionChecks(Leaf leaf, List<(int, int)> enumerator, int[] previousIndices) {                
+                // Add pairs on current leaf
+                for (int i = 0; i < leaf.Entities.Count - 1; i++) {
+                    for (int j = i + 1; j < leaf.Entities.Count; j++) {
+                        enumerator.Add((leaf.Entities[i], leaf.Entities[j]));
+                    }
                 }
 
-                for (int i = 0; i < leaf.Children.Length; i++) {
-                    FillPartition(leaf.Children[i], partition, indices);
+                // Adding pairs of parent leaves
+                for (int i = 0; i < leaf.Entities.Count; i++) {
+                    for (int j = 0; j < previousIndices.Length; j++) {
+                        enumerator.Add((leaf.Entities[i], previousIndices[j]));
+                    }
                 }
+
+                if (leaf.Children == null || leaf.Children.Length == 0)
+                    return;
+
+                int[] mergedIndices = [.. previousIndices, .. leaf.Entities];
+
+                foreach (var child in leaf.Children) {
+                    AddCollisionChecks(child, enumerator, mergedIndices);
+                }
+            }
+
+            public IEnumerator<(int, int)> GetEnumerator()
+            {
+                if (m_Enumerator == null)
+                    BuildEnumerator();
+
+                return m_Enumerator.GetEnumerator();
+            }
+
+            IEnumerator IEnumerable.GetEnumerator()
+            {
+                return GetEnumerator();
+            }
+
+            public void Draw(SpriteBatch spriteBatch) {
+                DrawLeaf(m_Base, spriteBatch);
+            }
+
+            private void DrawLeaf(Leaf leaf, SpriteBatch spriteBatch) {
+                MonoGame.Primitives2D.DrawRectangle(spriteBatch,
+                new Rectangle((int)leaf.Bounds.X, (int)leaf.Bounds.Y, (int)leaf.Bounds.Width, (int)leaf.Bounds.Height),
+                0.0f,
+                Color.Red);
+
+                if (leaf.Children == null)
+                    return;
+
+                foreach (var child in leaf.Children)
+                    DrawLeaf(child, spriteBatch);
             }
         }
 
-        public int[][] Partition(Point[] points, ColliderBounds[] colliderBounds)
+        private Quadtree m_Quadtree;
+
+        private SpriteBatch m_SpriteBatch;
+
+        public QuadtreeSpacePartitioner(SpriteBatch spriteBatch) {
+            m_SpriteBatch = spriteBatch;
+        }
+
+        public IEnumerable<(int, int)> Partition(Point[] points, ColliderBounds[] colliderBounds)
         {
-            Debug.WriteLine("Starting new partition");
+            // Debug.WriteLine("Starting new partition");
+            
             Quadtree tree = BuildTree(points, colliderBounds);
 
-            int[][] partition = tree.BuildPartition();
+            tree.PrintEntities();
 
-            return partition;
+            // int[][] partition = tree.BuildPartition();
+
+            m_Quadtree = tree;
+
+            return tree;
         }
 
         private Quadtree BuildTree(Point[] points, ColliderBounds[] colliderBounds) {
-            Quadtree tree = new Quadtree(new Bounds(0, 0, 1000, 1000));
+            Quadtree tree = new Quadtree(new Bounds(0, 0, 800, 500));
             
             for (int i = 0; i < points.Length; i++) {
                 tree.Add(i, points[i].WorldPosition, colliderBounds[i].Bounds);
             }
 
+            tree.BuildEnumerator();
+
             return tree;
+        }
+
+        public void Draw() {
+            m_SpriteBatch.Begin();
+
+            if (m_Quadtree == null)
+                return;
+
+            m_Quadtree.Draw(m_SpriteBatch);
+
+            m_SpriteBatch.End();
         }
     }
 }

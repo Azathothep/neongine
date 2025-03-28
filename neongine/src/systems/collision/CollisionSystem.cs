@@ -89,7 +89,9 @@ namespace neongine
                 query.Bounds[i].Update(query.Shapes[i].Shape);
             }
 
-            int[][] partition = m_SpacePartitioner.Partition(query.Points, query.Bounds);
+            IEnumerable<(int, int)> partition = m_SpacePartitioner.Partition(query.Points, query.Bounds);
+
+            Debug.WriteLine($"{partition.Count()} collisions to process for {query.Points.Length} entities");
 
             ((int, int)[], Collision[]) collisions;
             (int, int)[] triggers;

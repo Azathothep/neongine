@@ -12,27 +12,34 @@ namespace neongine
                 m_CollisionDetectors.Add(detector.Shapes, detector);
         }
 
-        public void GetCollisions(int[][] partition, Point[] points, Collider[] colliders, ColliderShape[] shapes, ColliderBounds[] bounds, out ((int, int)[], Collision[]) collisions, out (int, int)[] triggers)
+        public void GetCollisions(IEnumerable<(int, int)> partition, Point[] points, Collider[] colliders, ColliderShape[] shapes, ColliderBounds[] bounds, out ((int, int)[], Collision[]) collisions, out (int, int)[] triggers)
         {
             (int, int)[] crossingBounds = AABBCollisions(partition, points, bounds);
 
             SATCollisions(crossingBounds, points, colliders, shapes, out collisions, out triggers);
         }
 
-        private (int, int)[] AABBCollisions(int[][] partition, Point[] points, ColliderBounds[] bounds) {
+        private (int, int)[] AABBCollisions(IEnumerable<(int, int)> partition, Point[] points, ColliderBounds[] bounds) {
             List<(int, int)> crossingBounds = new();
 
-            for (int i = 0; i < partition.Length; i++) {
-                for (int j = 0; j < partition[i].Length; j++) {
-                    for (int k = j + 1; k < partition[i].Length; k++) {
-                        (int id1, int id2) = (partition[i][j], partition[i][k]);
-                        bool isCrossing = Bounds.Crossing(points[id1].WorldPosition, bounds[id1].Bounds, points[id2].WorldPosition, bounds[id2].Bounds);
+            foreach ((int id1, int id2) in partition) {
+                bool isCrossing = Bounds.Crossing(points[id1].WorldPosition, bounds[id1].Bounds, points[id2].WorldPosition, bounds[id2].Bounds);
 
-                        if (isCrossing)
-                            crossingBounds.Add((id1, id2));
-                    }
-                }
+                if (isCrossing)
+                    crossingBounds.Add((id1, id2));
             }
+
+            // for (int i = 0; i < partition.Length; i++) {
+            //     for (int j = 0; j < partition[i].Length; j++) {
+            //         for (int k = j + 1; k < partition[i].Length; k++) {
+            //             (int id1, int id2) = (partition[i][j], partition[i][k]);
+            //             bool isCrossing = Bounds.Crossing(points[id1].WorldPosition, bounds[id1].Bounds, points[id2].WorldPosition, bounds[id2].Bounds);
+
+            //             if (isCrossing)
+            //                 crossingBounds.Add((id1, id2));
+            //         }
+            //     }
+            // }
 
             return crossingBounds.ToArray();
         }

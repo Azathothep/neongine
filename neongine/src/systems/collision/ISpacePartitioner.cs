@@ -9,6 +9,6 @@ namespace neongine
 {
     public interface ISpacePartitioner
     {
-        public int[][] Partition(Point[] points, ColliderBounds[] colliderBounds);
+        public IEnumerable<(int, int)> Partition(Point[] points, ColliderBounds[] colliderBounds);
     }
 }

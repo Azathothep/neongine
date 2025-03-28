@@ -37,6 +37,7 @@ namespace neongine
             EntityID entity = Neongine.Entity();
             Point point = entity.Get<Point>();
             point.WorldPosition = GetRandomPosition();
+            point.WorldScale = Vector2.One * 0.5f;
 
             entity.Add<Ball>();
             entity.Add(new Renderer(m_Texture));

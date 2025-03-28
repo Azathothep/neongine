@@ -10,6 +10,6 @@ namespace neongine
 {
     public interface ICollisionProcessor
     {
-        public void GetCollisions(int[][] partition, Point[] points, Collider[] colliders, ColliderShape[] colliderShapes, ColliderBounds[] colliderBounds, out ((int, int)[], Collision[]) collisions, out (int, int)[] triggers);
+        public void GetCollisions(IEnumerable<(int, int)> partition, Point[] points, Collider[] colliders, ColliderShape[] colliderShapes, ColliderBounds[] colliderBounds, out ((int, int)[], Collision[]) collisions, out (int, int)[] triggers);
     }
 }
