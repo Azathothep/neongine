@@ -8,7 +8,6 @@ using System.Linq;
 
 namespace neongine
 {
-    [DoNotSerialize]
     public class DragSystem : IUpdateSystem, IDrawSystem
     {
         private Query<Point> m_Query = new Query<Point>(new IQueryFilter[]

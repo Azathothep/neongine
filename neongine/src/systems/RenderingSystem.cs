@@ -8,7 +8,6 @@ using System;
 
 namespace neongine
 {
-    [DoNotSerialize]
     public class RenderingSystem : IDrawSystem
     {
         private SpriteBatch m_SpriteBatch;

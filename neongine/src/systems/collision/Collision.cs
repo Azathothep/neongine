@@ -12,6 +12,12 @@ namespace neongine
         public EntityID ID2 => m_ID2;
 
         public Collision() {
+            
+        }
+
+        public Collision(EntityID id1, EntityID id2) {
+            m_ID1 = id1;
+            m_ID2 = id2;
         }
     }
 }

@@ -7,7 +7,6 @@ using System.IO;
 
 namespace neongine
 {
-    [DoNotSerialize]
     public class EditorSaveSystem : IUpdateSystem
     {
         public static string SavePath = "scenes/MainScene.json";

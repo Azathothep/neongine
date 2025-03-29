@@ -282,7 +282,7 @@ namespace neongine
             {
                 Type systemType = system.GetType();
 
-                if (systemType.GetCustomAttribute<DoNotSerializeAttribute>() != null)
+                if (systemType.GetCustomAttribute<SerializeAttribute>() == null)
                     continue;
 
                 serializableSystems.Add(system);
@@ -305,7 +305,7 @@ namespace neongine
                 componentDatas.Add(GetComponentData(components[i], componentType));
             }
 
-            EntityID[] children = new EntityID[0]; // Get all children
+            EntityID[] children = entityID.GetChildren(false); // new EntityID[0]; // Get all children
 
             EntityData[] childrenDatas = new EntityData[children.Length];
 

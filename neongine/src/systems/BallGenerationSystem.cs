@@ -7,12 +7,16 @@ using System.Diagnostics;
 
 namespace neongine
 {
+    [Serialize]
     public class BallGenerationSystem : IUpdateSystem
     {
         private bool m_KeyPressed = false;
+        
         private Texture2D m_Texture;
 
+        [Serialize]
         private Bounds m_Bounds;
+
         private Random m_Random = new Random();
 
         public BallGenerationSystem(Bounds generationBounds)

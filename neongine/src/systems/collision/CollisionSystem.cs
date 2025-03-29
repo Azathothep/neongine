@@ -11,7 +11,6 @@ using System.Diagnostics;
 
 namespace neongine
 {
-    [DoNotSerialize]
     public class CollisionSystem : IUpdateSystem, IDrawSystem
     {
         private static CollisionSystem m_Instance;
@@ -91,7 +90,7 @@ namespace neongine
 
             IEnumerable<(int, int)> partition = m_SpacePartitioner.Partition(query.Points, query.Bounds);
 
-            Debug.WriteLine($"{partition.Count()} collisions to process for {query.Points.Length} entities");
+            // Debug.WriteLine($"{partition.Count()} collisions to process for {query.Points.Length} entities");
 
             ((int, int)[], Collision[]) collisions;
             (int, int)[] triggers;

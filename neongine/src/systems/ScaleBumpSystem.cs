@@ -9,7 +9,7 @@ using Newtonsoft.Json;
 
 namespace neongine
 {
-    [AllowMultiple]
+    [Serialize, AllowMultiple]
     public class ScaleBumpSystem : IUpdateSystem
     {
         [Serialize]

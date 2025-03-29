@@ -8,6 +8,7 @@ using System.Diagnostics;
 
 namespace neongine
 {
+    [Serialize]
     public class VelocitySystem : IUpdateSystem
     {
         [Serialize]

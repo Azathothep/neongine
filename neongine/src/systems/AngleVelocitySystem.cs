@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 
 namespace neongine
 {
+    [Serialize]
     public class AngleVelocitySystem : IUpdateSystem
     {
         private Query<AngleVelocity, Point> m_Query;

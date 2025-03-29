@@ -39,7 +39,7 @@ namespace neongine
         {
             string jsonString = JsonConvert.SerializeObject(component, ComponentSerializerSettings);
 
-            Debug.WriteLine($"converted {component.GetType()} component: {jsonString}");
+            // Debug.WriteLine($"converted {component.GetType()} component: {jsonString}");
 
             return jsonString;
         }

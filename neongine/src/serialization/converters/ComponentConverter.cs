@@ -48,7 +48,7 @@ namespace neongine
 
             foreach (var property in contract.Properties)
             {
-                Debug.WriteLine("Writing for " + value.GetType().Name + ", property: " + property.PropertyName);
+                // Debug.WriteLine("Writing for " + value.GetType().Name + ", property: " + property.PropertyName);
 
                 object memberValue = GetObjectValue(property.PropertyName, value, componentType);
 

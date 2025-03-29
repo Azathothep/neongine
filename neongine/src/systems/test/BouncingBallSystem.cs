@@ -5,12 +5,14 @@ using System.Numerics;
 using neon;
 
 namespace neongine {
+    [Serialize]
     public class BouncingBallSystem : IUpdateSystem
     {
         private Query<Point, Velocity> m_Query = new Query<Point, Velocity>([
             new QueryFilter<Ball>(FilterTerm.Has)
         ]);
 
+        [Serialize]
         private Bounds m_Bounds;
 
         public BouncingBallSystem(Bounds bounds) {

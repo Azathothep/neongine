@@ -4,6 +4,7 @@ using System;
 
 namespace neongine
 {
+    [Serialize]
     public class FlipFlopEnablingSystem : IUpdateSystem
     {
         private bool m_KeyPressed = false;

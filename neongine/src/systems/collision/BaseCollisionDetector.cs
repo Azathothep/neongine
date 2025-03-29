@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 
 namespace neongine
@@ -75,7 +76,7 @@ namespace neongine
                     && m_CollisionDetectors.TryGetValue((c2.Geometry.Type, c1.Geometry.Type), out detector))
                 return detector.Collide(p2, c2, s2, p1, c1, s1);
             
-            Debug.WriteLine($"No collision detector for {c1.Geometry.Type} crossing {c2.Geometry.Type}");
+            Console.WriteLine($"No collision detector for {c1.Geometry.Type} crossing {c2.Geometry.Type}");
 
             return false;
         }

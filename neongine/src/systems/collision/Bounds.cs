@@ -3,13 +3,24 @@ using System.Diagnostics;
 using Microsoft.Xna.Framework;
 
 namespace neongine {
+    [Serializable]
     public struct Bounds {
+        [Serialize]
         public float X;
+
+        [Serialize]
         public float Y;
+
+        [Serialize]
         public float Width;
+
+        [Serialize]
         public float Height;
 
-        // Remove position
+        public Bounds() {
+
+        }
+
         public Bounds(float x, float y, float width, float height) {
             this.X = x;
             this.Y = y;
