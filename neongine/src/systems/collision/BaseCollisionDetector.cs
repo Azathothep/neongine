@@ -30,18 +30,6 @@ namespace neongine
                     crossingBounds.Add((id1, id2));
             }
 
-            // for (int i = 0; i < partition.Length; i++) {
-            //     for (int j = 0; j < partition[i].Length; j++) {
-            //         for (int k = j + 1; k < partition[i].Length; k++) {
-            //             (int id1, int id2) = (partition[i][j], partition[i][k]);
-            //             bool isCrossing = Bounds.Crossing(points[id1].WorldPosition, bounds[id1].Bounds, points[id2].WorldPosition, bounds[id2].Bounds);
-
-            //             if (isCrossing)
-            //                 crossingBounds.Add((id1, id2));
-            //         }
-            //     }
-            // }
-
             return crossingBounds.ToArray();
         }
 
@@ -71,7 +59,7 @@ namespace neongine
             ICollisionDetector detector;
             
             if (m_CollisionDetectors.TryGetValue((c1.Geometry.Type, c2.Geometry.Type), out detector))
-                return detector.Collide(p1, c1, s1, p2, c2, s1);
+                return detector.Collide(p1, c1, s1, p2, c2, s2);
             else if ((c1.Geometry.Type != c2.Geometry.Type)
                     && m_CollisionDetectors.TryGetValue((c2.Geometry.Type, c1.Geometry.Type), out detector))
                 return detector.Collide(p2, c2, s2, p1, c1, s1);

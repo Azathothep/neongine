@@ -49,9 +49,9 @@ namespace neongine
 
             Neongine.LoadEditorSystems(_spriteBatch);
             
-            // TestBallScenes();
+            TestBallScenes();
 
-            LoadScene();
+            // LoadScene();
 
             // InitializeContent();
         }
@@ -97,15 +97,15 @@ namespace neongine
             entityID_2.Add(new Renderer(squareTexture));
             entityID_3.Add(new Renderer(ballTexture));
 
-            point1.WorldScale = Vector2.One * 2.0f;
+            point1.WorldScale = Vector2.One * 2;
             point2.WorldScale = Vector2.One;
             point3.LocalScale = Vector2.One * 0.5f;
 
             entityID_1.Add<Draggable>();
             entityID_2.Add<Draggable>();
 
-            entityID_1.Add(new AngleVelocity(1.0f));
-            entityID_2.Add(new AngleVelocity(2.0f));
+            entityID_1.Add(new AngleVelocity(0.5f));
+            entityID_2.Add(new AngleVelocity(0.5f));
             entityID_3.Add(new AngleVelocity(-2.0f));
 
             entityID_1.Add(new Collider(new Geometry(GeometryType.Rectangle), 60, true));
@@ -114,12 +114,14 @@ namespace neongine
 
             Systems.Add(new AngleVelocitySystem());
 
-            CollisionSystem.OnTriggerEnter(entityID_1, (col) => Debug.WriteLine($"entity 1 entering trigger !"));
-            CollisionSystem.OnTriggerExit(entityID_1, (col) => Debug.WriteLine($"entity 1 exiting trigger !"));
+            CollisionSystem.OnTriggerEnter(entityID_2, (col) => Debug.WriteLine($"entity 2 entering trigger !"));
+            CollisionSystem.OnTriggerExit(entityID_2, (col) => Debug.WriteLine($"entity 2 exiting trigger !"));
         }
 
         protected override void Update(GameTime gameTime)
         {
+            // If unstarted entities : call IStartable
+
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
                 Exit();
 

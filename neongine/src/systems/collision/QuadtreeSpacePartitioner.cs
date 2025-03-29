@@ -235,14 +235,14 @@ namespace neongine {
         }
 
         public void Draw() {
-            m_SpriteBatch.Begin();
+            // m_SpriteBatch.Begin();
 
-            if (m_Quadtree == null)
-                return;
+            // if (m_Quadtree == null)
+            //     return;
 
-            m_Quadtree.Draw(m_SpriteBatch);
+            // m_Quadtree.Draw(m_SpriteBatch);
 
-            m_SpriteBatch.End();
+            // m_SpriteBatch.End();
         }
     }
 }

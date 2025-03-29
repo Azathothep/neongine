@@ -42,12 +42,12 @@ namespace neongine
 
         private QueryResultArray m_LastQueryResultArray = new();
 
-        private Dictionary<EntityID, List<Action<Collision>>> m_OnColliderEnter = new();
+        private Dictionary<EntityID, List<Action<EntityID, Collision>>> m_OnColliderEnter = new();
         private Dictionary<EntityID, List<Action<EntityID>>> m_OnColliderExit = new();
         private Dictionary<EntityID, List<Action<EntityID>>> m_OnTriggerEnter = new();
         private Dictionary<EntityID, List<Action<EntityID>>> m_OnTriggerExit = new();
 
-        public static void OnColliderEnter(EntityID id, Action<Collision> action) => SubscribeEvent(m_Instance.m_OnColliderEnter, id, action);
+        public static void OnColliderEnter(EntityID id, Action<EntityID, Collision> action) => SubscribeEvent(m_Instance.m_OnColliderEnter, id, action);
         public static void OnColliderExit(EntityID id, Action<EntityID> action) => SubscribeEvent(m_Instance.m_OnColliderExit, id, action);
         public static void OnTriggerEnter(EntityID id, Action<EntityID> action) => SubscribeEvent(m_Instance.m_OnTriggerEnter, id, action);
         public static void OnTriggerExit(EntityID id, Action<EntityID> action) => SubscribeEvent(m_Instance.m_OnTriggerExit, id, action);
@@ -211,12 +211,12 @@ namespace neongine
                 foreach (var action in actions2) action?.Invoke(id1);
         }
 
-        private void SendEvents(EntityID id1, EntityID id2, Collision collision, Dictionary<EntityID, List<Action<Collision>>> actions) {
+        private void SendEvents(EntityID id1, EntityID id2, Collision collision, Dictionary<EntityID, List<Action<EntityID, Collision>>> actions) {
             if (actions.TryGetValue(id1, out var actions1))
-                foreach (var action in actions1) action?.Invoke(collision);
+                foreach (var action in actions1) action?.Invoke(id2, collision);
                         
             if (actions.TryGetValue(id2, out var actions2))
-                foreach (var action in actions2) action?.Invoke(collision);
+                foreach (var action in actions2) action?.Invoke(id1, collision);
         }
 
         public void Draw()
@@ -243,7 +243,7 @@ namespace neongine
                         break;
                 }
 
-                DrawBounds(p, b.Bounds);
+                // DrawBounds(p, b.Bounds);
             }
 
 

@@ -27,7 +27,8 @@ namespace neongine
             Systems.Add(new CollisionSystem(qsp,
                                             new BaseCollisionProcessor(
                                             [
-                                                new CircleToCircleCollisionDetector()
+                                                new CircleToCircleCollisionDetector(),
+                                                new RectToRectCollisionDetector()
                                             ]),
                                             new NoCollisionResolver(),
                                             spriteBatch));
@@ -49,6 +50,10 @@ namespace neongine
             entityID.Add(new Name(name));
 
             return entityID;
+        }
+
+        public static void Start() {
+            EntityID[] entities = Entities.GetRoots();
         }
     }
 }
