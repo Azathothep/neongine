@@ -1,7 +1,5 @@
-using System;
 using System.Diagnostics;
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Input;
 
 namespace neongine {
     public class RectToRectCollisionDetector : ICollisionDetector
@@ -15,8 +13,7 @@ namespace neongine {
 
         public bool Collide(Vector3 p1, Collider c1, Shape s1, Vector3 p2, Collider c2, Shape s2, out Collision collision)
         {
-            collision = new Collision();
-            return !HasSeparatingAxis(p1, s1, p2, s2);
+            return !HasSeparatingAxis(p1, s1, p2, s2, out collision);
         }
 
         private bool HasSeparatingAxis(Vector3 p1, Shape s1, Vector3 p2, Shape s2) {
@@ -31,6 +28,64 @@ namespace neongine {
                     return true;
                 }
             }
+
+            return false;
+        }
+
+        private bool HasSeparatingAxis(Vector3 p1, Shape s1, Vector3 p2, Shape s2, out Collision collision) {
+            Vector2[] normals1 = GetNormals(s1);
+            Vector2[] normals2 = GetNormals(s2);
+
+            Collision.PenetrationData[] penetrationOnEntity1 = new Collision.PenetrationData[normals1.Length];
+
+            for (int i = 0; i < normals1.Length; i++) {
+                (float min1, float max1) = GetMinMax(p1, s1, normals1[i]);
+                (float min2, float max2) = GetMinMax(p2, s2, normals1[i]);
+
+                float difference;
+                if (min1 < min2)
+                    difference = max1 - min2;
+                else
+                    difference = max2 - min1;
+                    
+                if (difference < 0) {
+                    collision = null;
+                    return true;
+                }
+
+                penetrationOnEntity1[i] = new Collision.PenetrationData() {
+                    Axis = normals1[i],
+                    Length = difference
+                };
+            }
+            
+            Collision.PenetrationData[] penetrationOnEntity2 = new Collision.PenetrationData[normals2.Length];
+
+            for (int i = 0; i < normals2.Length; i++) {
+                (float min1, float max1) = GetMinMax(p1, s1, normals2[i]);
+                (float min2, float max2) = GetMinMax(p2, s2, normals2[i]);
+
+                float difference;
+                if (min1 < min2)
+                    difference = max1 - min2;
+                else
+                    difference = max2 - min1;
+                    
+                if (difference < 0) {
+                    collision = null;
+                    return true;
+                }
+
+                penetrationOnEntity2[i] = new Collision.PenetrationData() {
+                    Axis = normals2[i],
+                    Length = difference
+                };
+            }
+
+            collision = new Collision() {
+                PenetrationOnEntity1 = penetrationOnEntity1,
+                PenetrationOnEntity2 = penetrationOnEntity2
+            };
 
             return false;
         }

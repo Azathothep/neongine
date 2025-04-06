@@ -37,6 +37,8 @@ namespace neongine
             public Vector3[] Positions;
             public float[] Rotations;
             public Vector2[] Scales;
+            public Point[] Points;
+            public Velocity[] Velocities;
             public Collider[] Colliders;
             public ColliderShape[] Shapes;
             public ColliderBounds[] Bounds;
@@ -93,14 +95,12 @@ namespace neongine
 
             IEnumerable<(int, int)> partition = m_SpacePartitioner.Partition(query.Positions, query.Bounds);
 
-            // Debug.WriteLine($"{partition.Count()} collisions to process for {query.Points.Length} entities");
-
             ((int, int)[], Collision[]) collisions;
             (int, int)[] triggers;
 
             m_CollisionProcessor.GetCollisions(partition, query.Positions, query.Colliders, query.Shapes, query.Bounds, out collisions, out triggers);
 
-            m_CollisionResolver.Resolve(collisions.Item2);
+            m_CollisionResolver.Resolve(collisions.Item2, collisions.Item1, query.Points, query.Shapes, query.Velocities, query.IsStatic);
 
             Dictionary<(EntityID, EntityID), Collision> collisionPairs;
             HashSet<(EntityID, EntityID)> triggerPairs;
@@ -126,6 +126,8 @@ namespace neongine
                 Positions = new Vector3[count],
                 Rotations = new float[count],
                 Scales = new Vector2[count],
+                Points = new Point[count],
+                Velocities = new Velocity[count],
                 Colliders = new Collider[count],
                 Shapes = new ColliderShape[count],
                 Bounds = new ColliderBounds[count],
@@ -138,6 +140,8 @@ namespace neongine
                 query.Positions[index] = v == null ? p.WorldPosition : p.WorldPosition + v.Value;
                 query.Rotations[index] = p.WorldRotation;
                 query.Scales[index] = p.WorldScale;
+                query.Points[index] = p;
+                query.Velocities[index] = v;
                 query.Colliders[index] = c;
                 query.Shapes[index] = s == null ? id.Add<ColliderShape>() : s;
                 query.Bounds[index] = b == null ? id.Add<ColliderBounds>() : b;

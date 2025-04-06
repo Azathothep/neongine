@@ -8,6 +8,6 @@ namespace neongine
 {
     public class NoCollisionResolver : ICollisionResolver
     {
-        public void Resolve(Collision[] collisions) { }
+        public void Resolve(Collision[] collisionDatas, (int, int)[] indices, Point[] points, ColliderShape[] shapes, Velocity[] velocities, bool[] isStatic) { }
     }
 }
