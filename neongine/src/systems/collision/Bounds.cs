@@ -32,8 +32,8 @@ namespace neongine {
             if (shape.Vertices == null) {
                 Debug.WriteLine("Cannot create bounds : shape has no vertices !");
                 return;
-            } else if (shape.Vertices.Length == 1)
-                BuildCircleBounds(shape.Vertices[0].X);
+            } else if (shape.Vertices.Length == 2)
+                BuildCircleBounds(shape.Vertices[1].X);
             else
                 BuildPolygonBounds(shape.Vertices);
         }

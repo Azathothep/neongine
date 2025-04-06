@@ -1,4 +1,5 @@
-﻿using neon;
+﻿using Microsoft.Xna.Framework;
+using neon;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,6 +10,6 @@ namespace neongine
 {
     public interface ISpacePartitioner
     {
-        public IEnumerable<(int, int)> Partition(Point[] points, ColliderBounds[] colliderBounds);
+        public IEnumerable<(int, int)> Partition(Vector3[] positions, ColliderBounds[] colliderBounds);
     }
 }

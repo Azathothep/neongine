@@ -59,7 +59,7 @@ namespace neongine
         private void TestBallScenes() {
             Bounds bounds = new Bounds(50, 50, 700, 400);
 
-            Systems.Add(new VelocitySystem(1.0f));
+            Systems.Add(new VelocitySystem());
             Systems.Add(new AngleVelocitySystem());
             Systems.Add(new BallGenerationSystem(bounds));
             Systems.Add(new BouncingBallSystem(bounds));
@@ -101,8 +101,8 @@ namespace neongine
             point2.WorldScale = Vector2.One;
             point3.LocalScale = Vector2.One * 0.5f;
 
-            entityID_1.Add<Draggable>();
-            entityID_2.Add<Draggable>();
+            entityID_1.Add<IsDraggable>();
+            entityID_2.Add<IsDraggable>();
 
             entityID_1.Add(new AngleVelocity(0.5f));
             entityID_2.Add(new AngleVelocity(0.5f));

@@ -12,7 +12,7 @@ namespace neongine
     {
         private Query<Point> m_Query = new Query<Point>(new IQueryFilter[]
         {
-            new QueryFilter<Draggable>(FilterTerm.Has)
+            new QueryFilter<IsDraggable>(FilterTerm.Has)
         });
 
         private float m_Radius = 4.0f;

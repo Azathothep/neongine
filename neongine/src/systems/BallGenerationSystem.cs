@@ -47,7 +47,7 @@ namespace neongine
             entity.Add(new Renderer(m_Texture));
             entity.Add(new Velocity(GetRandomDirection()));
             entity.Add(new AngleVelocity(m_Random.Next(1, 3)));
-            entity.Add(new Collider(new Geometry(GeometryType.Rectangle, 60)));
+            entity.Add(new Collider(new Geometry(GeometryType.Circle, 30)));
 
             // Debug.WriteLine("New ball generated at " + point.WorldPosition);
         }

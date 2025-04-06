@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using Microsoft.Xna.Framework;
 
 namespace neongine
 {
@@ -13,18 +14,18 @@ namespace neongine
                 m_CollisionDetectors.Add(detector.Shapes, detector);
         }
 
-        public void GetCollisions(IEnumerable<(int, int)> partition, Point[] points, Collider[] colliders, ColliderShape[] shapes, ColliderBounds[] bounds, out ((int, int)[], Collision[]) collisions, out (int, int)[] triggers)
+        public void GetCollisions(IEnumerable<(int, int)> partition, Vector3[] positions, Collider[] colliders, ColliderShape[] shapes, ColliderBounds[] bounds, out ((int, int)[], Collision[]) collisions, out (int, int)[] triggers)
         {
-            (int, int)[] crossingBounds = AABBCollisions(partition, points, bounds);
+            (int, int)[] crossingBounds = AABBCollisions(partition, positions, bounds);
 
-            SATCollisions(crossingBounds, points, colliders, shapes, out collisions, out triggers);
+            SATCollisions(crossingBounds, positions, colliders, shapes, out collisions, out triggers);
         }
 
-        private (int, int)[] AABBCollisions(IEnumerable<(int, int)> partition, Point[] points, ColliderBounds[] bounds) {
+        private (int, int)[] AABBCollisions(IEnumerable<(int, int)> partition, Vector3[] positions, ColliderBounds[] bounds) {
             List<(int, int)> crossingBounds = new();
 
             foreach ((int id1, int id2) in partition) {
-                bool isCrossing = Bounds.Crossing(points[id1].WorldPosition, bounds[id1].Bounds, points[id2].WorldPosition, bounds[id2].Bounds);
+                bool isCrossing = Bounds.Crossing(positions[id1], bounds[id1].Bounds, positions[id2], bounds[id2].Bounds);
 
                 if (isCrossing)
                     crossingBounds.Add((id1, id2));
@@ -33,19 +34,19 @@ namespace neongine
             return crossingBounds.ToArray();
         }
 
-        private void SATCollisions((int, int)[] indices, Point[] points, Collider[] colliders, ColliderShape[] shapes, out ((int, int)[], Collision[]) collisions, out (int, int)[] triggers) {
+        private void SATCollisions((int, int)[] indices, Vector3[] positions, Collider[] colliders, ColliderShape[] shapes, out ((int, int)[], Collision[]) collisions, out (int, int)[] triggers) {
             List<(int, int)> collisionIndices = new();
             List<Collision> collisionList = new();
             List<(int, int)> triggerIndices = new();
             
             foreach ((int i1, int i2) in indices) {
                 if (!colliders[i1].IsTrigger && !colliders[i2].IsTrigger
-                    && SATCollision(points[i1], colliders[i1], shapes[i1].Shape, points[i2], colliders[i2], shapes[i2].Shape, out Collision collision)) {
+                    && SATCollision(positions[i1], colliders[i1], shapes[i1].Shape, positions[i2], colliders[i2], shapes[i2].Shape, out Collision collision)) {
                     
                     collisionIndices.Add((i1, i2));
                     collisionList.Add(collision);
                 }
-                else if (SATCollision(points[i1], colliders[i1], shapes[i1].Shape, points[i2], colliders[i2], shapes[i2].Shape))
+                else if (SATCollision(positions[i1], colliders[i1], shapes[i1].Shape, positions[i2], colliders[i2], shapes[i2].Shape))
                 {
                     triggerIndices.Add((i1, i2));
                 }
@@ -55,7 +56,7 @@ namespace neongine
             triggers = triggerIndices.ToArray();
         }
 
-        private bool SATCollision(Point p1, Collider c1, Shape s1, Point p2, Collider c2, Shape s2) {
+        private bool SATCollision(Vector3 p1, Collider c1, Shape s1, Vector3 p2, Collider c2, Shape s2) {
             ICollisionDetector detector;
             
             if (m_CollisionDetectors.TryGetValue((c1.Geometry.Type, c2.Geometry.Type), out detector))
@@ -69,7 +70,7 @@ namespace neongine
             return false;
         }
 
-        private bool SATCollision(Point p1, Collider c1, Shape s1, Point p2, Collider c2, Shape s2, out Collision collision) {
+        private bool SATCollision(Vector3 p1, Collider c1, Shape s1, Vector3 p2, Collider c2, Shape s2, out Collision collision) {
             ICollisionDetector detector;
             
             if (m_CollisionDetectors.TryGetValue((c1.Geometry.Type, c2.Geometry.Type), out detector))

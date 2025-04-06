@@ -25,9 +25,10 @@ namespace neongine {
             }
         }
 
-        private Vector2[] BuildCircle(float width) {
-            Vector2[] vertices = new Vector2[1];
-            vertices[0].X = width;
+        private Vector2[] BuildCircle(float radius) {
+            Vector2[] vertices = new Vector2[2];
+            vertices[0] = Vector2.Zero;
+            vertices[1] = new Vector2(radius, 0);
 
             return vertices;
         }

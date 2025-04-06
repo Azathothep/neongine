@@ -207,11 +207,11 @@ namespace neongine {
             m_SpriteBatch = spriteBatch;
         }
 
-        public IEnumerable<(int, int)> Partition(Point[] points, ColliderBounds[] colliderBounds)
+        public IEnumerable<(int, int)> Partition(Vector3[] positions, ColliderBounds[] colliderBounds)
         {
             // Debug.WriteLine("Starting new partition");
             
-            Quadtree tree = BuildTree(points, colliderBounds);
+            Quadtree tree = BuildTree(positions, colliderBounds);
 
             tree.PrintEntities();
 
@@ -222,11 +222,11 @@ namespace neongine {
             return tree;
         }
 
-        private Quadtree BuildTree(Point[] points, ColliderBounds[] colliderBounds) {
+        private Quadtree BuildTree(Vector3[] positions, ColliderBounds[] colliderBounds) {
             Quadtree tree = new Quadtree(new Bounds(0, 0, 800, 500));
             
-            for (int i = 0; i < points.Length; i++) {
-                tree.Add(i, points[i].WorldPosition, colliderBounds[i].Bounds);
+            for (int i = 0; i < positions.Length; i++) {
+                tree.Add(i, positions[i], colliderBounds[i].Bounds);
             }
 
             tree.BuildEnumerator();

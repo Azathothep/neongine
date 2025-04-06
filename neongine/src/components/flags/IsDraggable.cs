@@ -6,13 +6,13 @@ using System.Threading.Tasks;
 
 namespace neon
 {
-    public class Draggable : IComponent
+    public class IsDraggable : IComponent
     {
         public EntityID EntityID { get; set; }
 
         public IComponent Clone()
         {
-            return new Draggable();
+            return new IsDraggable();
         }
     }
 }

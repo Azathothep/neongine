@@ -8,21 +8,21 @@ namespace neongine
         public EntityID EntityID { get; private set; }
 
         [Serialize]
-        public Vector3 Direction;
+        public Vector3 Value;
 
         public Velocity()
         {
 
         }
 
-        public Velocity(Vector3 direction)
+        public Velocity(Vector3 value)
         {
-            this.Direction = direction;
+            this.Value = value;
         }
 
         public Velocity(Velocity velocity)
         {
-            this.Direction = velocity.Direction;
+            this.Value = velocity.Value;
         }
 
         public IComponent Clone()

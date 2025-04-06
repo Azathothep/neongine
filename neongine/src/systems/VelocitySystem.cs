@@ -11,14 +11,10 @@ namespace neongine
     [Serialize]
     public class VelocitySystem : IUpdateSystem
     {
-        [Serialize]
-        private float m_Speed;
-
         private Query<Point, Velocity> m_Query;
 
-        public VelocitySystem(float speed)
+        public VelocitySystem()
         {
-            m_Speed = speed;
             m_Query = new Query<Point, Velocity>();
         }
 
@@ -31,7 +27,7 @@ namespace neongine
                 Point p = r.Item2;
                 Velocity v = r.Item3;
 
-                p.WorldPosition = p.WorldPosition + v.Direction * m_Speed;
+                p.WorldPosition = p.WorldPosition + v.Value;
             }
         }
     }

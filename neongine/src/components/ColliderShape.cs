@@ -19,28 +19,28 @@ namespace neongine {
 
         }
 
-        public ColliderShape(Collider collider, Point point) {
-            ForceUpdate(collider, point);
+        public ColliderShape(Collider collider, float rotation, Vector2 scale) {
+            ForceUpdate(collider, rotation, scale);
         }
 
-        public bool Update(Collider collider, Point point) {
-            if (m_CachedRotation == collider.Rotation + point.WorldRotation
-                && m_CachedScale == point.WorldScale
+        public bool Update(Collider collider, float rotation, Vector2 scale) {
+            if (m_CachedRotation == collider.Rotation + rotation
+                && m_CachedScale == scale
                 && m_CachedGeometry.Equals(collider.Geometry))
                 return false;
             
-            ForceUpdate(collider, point);
+            ForceUpdate(collider, rotation, scale);
             return true;
         }
 
-        private void ForceUpdate(Collider collider, Point point) {
-            float targetRotation = (collider.Rotation + point.WorldRotation) % 360;
+        private void ForceUpdate(Collider collider, float rotation, Vector2 scale) {
+            float targetRotation = (collider.Rotation + rotation) % 360;
 
-            m_Shape = new Shape(collider.Geometry, targetRotation, point.WorldScale * collider.Size);
+            m_Shape = new Shape(collider.Geometry, targetRotation, scale * collider.Size);
 
             m_CachedRotation = targetRotation;
             m_CachedGeometry = collider.Geometry;
-            m_CachedScale = point.WorldScale;
+            m_CachedScale = scale;
         }
 
         public ColliderShape(ColliderShape other) {

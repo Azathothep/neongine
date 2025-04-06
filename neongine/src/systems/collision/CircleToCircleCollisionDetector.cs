@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using Microsoft.Xna.Framework;
 
 namespace neongine {
@@ -6,13 +7,13 @@ namespace neongine {
     {
         public (GeometryType, GeometryType) Shapes => (GeometryType.Circle, GeometryType.Circle);
 
-        public bool Collide(Point p1, Collider c1, Shape s1, Point p2, Collider c2, Shape s2)
+        public bool Collide(Vector3 p1, Collider c1, Shape s1, Vector3 p2, Collider c2, Shape s2)
         {
-            Vector3 difference = p1.WorldPosition - p2.WorldPosition;
+            Vector3 difference = p1 - p2;
             difference.Z = 0;
             float distanceSqr = difference.LengthSquared();
 
-            float radiuses = c1.Width * p1.WorldScale.X + c2.Width * p2.WorldScale.X;
+            float radiuses = c1.Size * s1.Vertices[1].X + c2.Size * s2.Vertices[1].X;
             float radiusesSqr = radiuses * radiuses;
 
             if (distanceSqr > radiusesSqr) {
@@ -21,13 +22,13 @@ namespace neongine {
             return true;
         }
 
-        public bool Collide(Point p1, Collider c1, Shape s1, Point p2, Collider c2, Shape s2, out Collision collision)
+        public bool Collide(Vector3 p1, Collider c1, Shape s1, Vector3 p2, Collider c2, Shape s2, out Collision collision)
         {
-            Vector3 difference = p1.WorldPosition - p2.WorldPosition;
+            Vector3 difference = p1 - p2;
             difference.Z = 0;
             float distanceSqr = difference.LengthSquared();
 
-            float radiuses = c1.Width * p1.WorldScale.X + c2.Width * p2.WorldScale.X;
+            float radiuses = c1.Size * s1.Vertices[1].X + c2.Size * s2.Vertices[1].X;
             float radiusesSqr = radiuses * radiuses;
 
             if (distanceSqr > radiusesSqr) {

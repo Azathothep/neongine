@@ -1,13 +1,11 @@
 ﻿#define DRAW_COLLISIONS
 
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using neon;
 using System;
 using System.Collections.Generic;
-using Microsoft.Xna.Framework;
 using System.Linq;
-using System.ComponentModel.DataAnnotations;
-using System.Diagnostics;
 
 namespace neongine
 {
@@ -15,10 +13,12 @@ namespace neongine
     {
         private static CollisionSystem m_Instance;
 
-        private Query<Point, Collider, ColliderShape, ColliderBounds> m_Query = new(
+        private Query<Point, Collider, ColliderShape, ColliderBounds, Velocity, IsStatic> m_Query = new(
             [
                 new QueryFilter<ColliderShape>(FilterTerm.MightHave),
-                new QueryFilter<ColliderBounds>(FilterTerm.MightHave)
+                new QueryFilter<ColliderBounds>(FilterTerm.MightHave),
+                new QueryFilter<Velocity>(FilterTerm.MightHave),
+                new QueryFilter<IsStatic>(FilterTerm.MightHave)
             ]);
 
         private ISpacePartitioner m_SpacePartitioner;
@@ -34,10 +34,13 @@ namespace neongine
         private struct QueryResultArray {
             public int Length;
             public EntityID[] IDs;
-            public Point[] Points;
+            public Vector3[] Positions;
+            public float[] Rotations;
+            public Vector2[] Scales;
             public Collider[] Colliders;
             public ColliderShape[] Shapes;
             public ColliderBounds[] Bounds;
+            public bool[] IsStatic;
         }
 
         private QueryResultArray m_LastQueryResultArray = new();
@@ -73,14 +76,14 @@ namespace neongine
 
         public void Update(TimeSpan timeSpan)
         {
-            IEnumerable<(EntityID, Point, Collider, ColliderShape, ColliderBounds)> queryResult = QueryBuilder.Get(m_Query, QueryType.Cached, QueryResultMode.Safe);
+            IEnumerable<(EntityID, Point, Collider, ColliderShape, ColliderBounds, Velocity, IsStatic)> queryResult = QueryBuilder.Get(m_Query, QueryType.Cached, QueryResultMode.Safe);
 
             QueryResultArray query = MakeResultArray(queryResult);
 
             List<int> boundsToUpdate = new();
 
             for (int i = 0; i < query.Length; i++) {
-                if (query.Shapes[i].Update(query.Colliders[i], query.Points[i]))
+                if (query.Shapes[i].Update(query.Colliders[i], query.Rotations[i], query.Scales[i]))
                     boundsToUpdate.Add(i);
             }
 
@@ -88,18 +91,16 @@ namespace neongine
                 query.Bounds[i].Update(query.Shapes[i].Shape);
             }
 
-            IEnumerable<(int, int)> partition = m_SpacePartitioner.Partition(query.Points, query.Bounds);
+            IEnumerable<(int, int)> partition = m_SpacePartitioner.Partition(query.Positions, query.Bounds);
 
             // Debug.WriteLine($"{partition.Count()} collisions to process for {query.Points.Length} entities");
 
             ((int, int)[], Collision[]) collisions;
             (int, int)[] triggers;
 
-            m_CollisionProcessor.GetCollisions(partition, query.Points, query.Colliders, query.Shapes, query.Bounds, out collisions, out triggers);
+            m_CollisionProcessor.GetCollisions(partition, query.Positions, query.Colliders, query.Shapes, query.Bounds, out collisions, out triggers);
 
-            foreach (var collision in collisions.Item2) {
-                m_CollisionResolver.Resolve(collision);
-            }
+            m_CollisionResolver.Resolve(collisions.Item2);
 
             Dictionary<(EntityID, EntityID), Collision> collisionPairs;
             HashSet<(EntityID, EntityID)> triggerPairs;
@@ -116,25 +117,31 @@ namespace neongine
             m_LastQueryResultArray = query;
         }
 
-        private QueryResultArray MakeResultArray(IEnumerable<(EntityID, Point, Collider, ColliderShape, ColliderBounds)> queryResult) {
+        private QueryResultArray MakeResultArray(IEnumerable<(EntityID, Point, Collider, ColliderShape, ColliderBounds, Velocity, IsStatic)> queryResult) {
             int count = queryResult.Count();
 
             QueryResultArray query = new QueryResultArray() {
                 Length = count,
                 IDs = new EntityID[count],
-                Points = new Point[count],
+                Positions = new Vector3[count],
+                Rotations = new float[count],
+                Scales = new Vector2[count],
                 Colliders = new Collider[count],
                 Shapes = new ColliderShape[count],
-                Bounds = new ColliderBounds[count]
+                Bounds = new ColliderBounds[count],
+                IsStatic = new bool[count]
             };
 
             int index = 0;
-            foreach ((EntityID id, Point p, Collider c, ColliderShape s, ColliderBounds b) in queryResult) {
+            foreach ((EntityID id, Point p, Collider c, ColliderShape s, ColliderBounds b, Velocity v, IsStatic isStatic) in queryResult) {
                 query.IDs[index] = id;
-                query.Points[index] = p;
+                query.Positions[index] = v == null ? p.WorldPosition : p.WorldPosition + v.Value;
+                query.Rotations[index] = p.WorldRotation;
+                query.Scales[index] = p.WorldScale;
                 query.Colliders[index] = c;
                 query.Shapes[index] = s == null ? id.Add<ColliderShape>() : s;
                 query.Bounds[index] = b == null ? id.Add<ColliderBounds>() : b;
+                query.IsStatic[index] = isStatic != null;
 
                 index++;
             }
@@ -226,8 +233,8 @@ namespace neongine
             m_SpriteBatch.Begin();
 
             for (int i = 0; i < m_LastQueryResultArray.Length; i++) {
-                (EntityID id, Point p, Collider c, ColliderShape s, ColliderBounds b) = (   m_LastQueryResultArray.IDs[i],
-                                                                                            m_LastQueryResultArray.Points[i],
+                (EntityID id, Vector3 p, Collider c, ColliderShape s, ColliderBounds b) = (   m_LastQueryResultArray.IDs[i],
+                                                                                            m_LastQueryResultArray.Positions[i],
                                                                                             m_LastQueryResultArray.Colliders[i],
                                                                                             m_LastQueryResultArray.Shapes[i],
                                                                                             m_LastQueryResultArray.Bounds[i]);
@@ -236,7 +243,7 @@ namespace neongine
 
                 switch (c.Geometry.Type) {
                     case GeometryType.Circle:
-                        DrawCircle(p, c, color);
+                        DrawCircle(p, s.Shape.Vertices[1].X, c, color);
                         break;
                     default:
                         DrawPolygon(p, s.Shape.Vertices, color);
@@ -251,20 +258,21 @@ namespace neongine
 #endif
         }
 
-        private void DrawCircle(Point p, Collider c, Color color) {
+        private void DrawCircle(Vector3 p, float radius, Collider c, Color color) {
             MonoGame.Primitives2D.DrawCircle(m_SpriteBatch,
-                            new Vector2(p.WorldPosition.X, p.WorldPosition.Y),
-                            c.Width * p.WorldScale.X,
+                            new Vector2(p.X, p.Y),
+                            c.Size * radius,
                             8,
                             color);
         }
 
-        private void DrawPolygon(Point p, Vector2[] vertices, Color color) {
+        private void DrawPolygon(Vector3 p, Vector2[] vertices, Color color) {
+            Vector2 position2D = new Vector2(p.X, p.Y);
             for (int i = 0; i < vertices.Length - 1; i++) {
-                MonoGame.Primitives2D.DrawLine(m_SpriteBatch, p.WorldPosition2D + vertices[i], p.WorldPosition2D + vertices[i + 1], color);
+                MonoGame.Primitives2D.DrawLine(m_SpriteBatch, position2D + vertices[i], position2D + vertices[i + 1], color);
             }
 
-            MonoGame.Primitives2D.DrawLine(m_SpriteBatch, p.WorldPosition2D + vertices[vertices.Length - 1], p.WorldPosition2D + vertices[0], color);
+            MonoGame.Primitives2D.DrawLine(m_SpriteBatch, position2D + vertices[vertices.Length - 1], position2D + vertices[0], color);
         }
 
         private void DrawBounds(Point p, Bounds bounds) {

@@ -30,7 +30,7 @@ namespace neongine
                                                 new CircleToCircleCollisionDetector(),
                                                 new RectToRectCollisionDetector()
                                             ]),
-                                            new NoCollisionResolver(),
+                                            new BaseCollisionResolver(),
                                             spriteBatch));
         }
 

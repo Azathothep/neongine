@@ -8,18 +8,18 @@ namespace neongine {
     {
         public (GeometryType, GeometryType) Shapes => (GeometryType.Rectangle, GeometryType.Rectangle);
 
-        public bool Collide(Point p1, Collider c1, Shape s1, Point p2, Collider c2, Shape s2)
+        public bool Collide(Vector3 p1, Collider c1, Shape s1, Vector3 p2, Collider c2, Shape s2)
         {
             return !HasSeparatingAxis(p1, s1, p2, s2);
         }
 
-        public bool Collide(Point p1, Collider c1, Shape s1, Point p2, Collider c2, Shape s2, out Collision collision)
+        public bool Collide(Vector3 p1, Collider c1, Shape s1, Vector3 p2, Collider c2, Shape s2, out Collision collision)
         {
             collision = new Collision();
             return !HasSeparatingAxis(p1, s1, p2, s2);
         }
 
-        private bool HasSeparatingAxis(Point p1, Shape s1, Point p2, Shape s2) {
+        private bool HasSeparatingAxis(Vector3 p1, Shape s1, Vector3 p2, Shape s2) {
             Vector2[] normals = [.. GetNormals(s1), .. GetNormals(s2)];
 
             for (int i = 0; i < normals.Length; i++) {
@@ -35,12 +35,12 @@ namespace neongine {
             return false;
         }
 
-        private (float, float) GetMinMax(Point point, Shape shape, Vector2 axis) {
+        private (float, float) GetMinMax(Vector3 position, Shape shape, Vector2 axis) {
             float minValue = float.MaxValue;
             float maxValue = float.MinValue;
 
             for (int i = 0; i < shape.Vertices.Length; i++) {
-                Vector2 verticePosition = point.WorldPosition2D + shape.Vertices[i];
+                Vector2 verticePosition = new Vector2(position.X, position.Y) + shape.Vertices[i];
                 float length  = Vector2.Dot(verticePosition, axis);
                 if (length < minValue)
                     minValue = length;
