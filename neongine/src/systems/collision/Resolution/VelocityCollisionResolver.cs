@@ -1,160 +1,204 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 using Microsoft.Xna.Framework;
 using neon;
 
 namespace neongine {
     public class VelocityCollisionResolver : ICollisionResolver
     {
-        private struct OneMovementResolution {
+        private struct OneMovementData {
             public Penetration[] PenetrationDatas;
             public int Index;
             public Vector2 Velocity;
 
-            public OneMovementResolution(Collision collision, int index, Vector2 velocity) {
+            public OneMovementData(Collision collision, int index, Vector2 velocity) {
                 PenetrationDatas = collision.Penetration;
                 Index = index;
                 Velocity = velocity;
             }
         }
 
-        private struct TwoMovementsResolution {
+        private struct TwoMovementsData {
             public Penetration[] PenetrationDatas;
             public (int, int) Indices;
             public (Vector2, Vector2) Velocities;
-            public TwoMovementsResolution(Collision collision, int index1, Vector2 velocity1, int index2, Vector2 velocity2) {
+            public TwoMovementsData(Collision collision, int index1, Vector2 velocity1, int index2, Vector2 velocity2) {
                 PenetrationDatas = collision.Penetration;
                 Indices = (index1, index2);
                 Velocities = (velocity1, velocity2);
             }
         }
 
-        private struct Solution {
+        private class Solution {
+            public int[] Entities;
+            public Correction[] Corrections;
+
+            public Solution(int[] entities, Correction[] corrections) {
+                Entities = entities;
+                Corrections = corrections;
+            }
+        }
+
+        private struct Correction {
             public Vector2 Velocity;
             public float Length;
-            public Solution(Vector2 velocity, float length) {
+            public Correction(Vector2 velocity, float length) {
                 Velocity = velocity;
                 Length = length;
             }
+
+            public bool HasPriorityAgainst(Correction other) => this.Length < other.Length;
         }
 
         public void Resolve(CollisionData[] collisionDatas, EntityID[] entityIDs, Velocity[] velocities, bool[] isStatic)
         {
-            List<OneMovementResolution> oneMovementResolutions = new();
-            List<TwoMovementsResolution> twoMovementsResolutions = new();
+            List<OneMovementData> oneMovementResolutions = new();
+            List<TwoMovementsData> twoMovementsResolutions = new();
+
+            FillResolutionDatas(collisionDatas, entityIDs, velocities, isStatic, out oneMovementResolutions, out twoMovementsResolutions);
+
+            Dictionary<int, List<(Solution, int)>> entityToSolutions = GetSolutions(oneMovementResolutions, twoMovementsResolutions);
+
+            Dictionary<int, Correction> entityToCorrections = GetSingleCorrections(entityToSolutions);
+            
+            foreach (var correction in entityToCorrections) {
+                velocities[correction.Key].Value = correction.Value.Velocity;
+            }
+        }
+
+        private void FillResolutionDatas(CollisionData[] collisionDatas, EntityID[] entityIDs, Velocity[] velocities, bool[] isStatic, out List<OneMovementData> oneMovementResolutions, out List<TwoMovementsData> twoMovementsResolutions) {
+            oneMovementResolutions = new();
+            twoMovementsResolutions = new();
 
             for (int i = 0; i < collisionDatas.Length; i++) {
                 int id1 = Array.FindIndex(entityIDs, id => id == collisionDatas[i].Entities.Item1);
                 int id2 = Array.FindIndex(entityIDs, id => id == collisionDatas[i].Entities.Item2);
+
                 bool movingEntity1 = !isStatic[id1] && velocities[id1] != null;
                 bool movingEntity2 = !isStatic[id2] && velocities[id2] != null;
+                
                 if (movingEntity1 && movingEntity2)
                     twoMovementsResolutions.Add(
-                        new TwoMovementsResolution(collisionDatas[i].Collision, id1, velocities[id1].Value, id2, velocities[id2].Value)
+                        new TwoMovementsData(collisionDatas[i].Collision, id1, velocities[id1].Value, id2, velocities[id2].Value)
                     );
                 else if (movingEntity1)
                     oneMovementResolutions.Add(
-                        new OneMovementResolution(collisionDatas[i].Collision, id1, velocities[id1].Value)
+                        new OneMovementData(collisionDatas[i].Collision, id1, velocities[id1].Value)
                     );
                 else if (movingEntity2)
                     oneMovementResolutions.Add(
-                        new OneMovementResolution(collisionDatas[i].Collision, id2, velocities[id2].Value)
+                        new OneMovementData(collisionDatas[i].Collision, id2, velocities[id2].Value)
                     );
             }
+        }
 
-            Dictionary<int, Solution> oneSolutions = new();
-
+        private Dictionary<int, List<(Solution, int)>> GetSolutions(List<OneMovementData> oneMovementResolutions, List<TwoMovementsData> twoMovementsResolutions) {
+            Dictionary<int, List<(Solution, int)>> entityToSolutions = new();
+            
             foreach (var omr in oneMovementResolutions) {
-                Solution solution = Solve(omr);
-                if (oneSolutions.TryGetValue(omr.Index, out Solution currentSolution)) {
-                    if (Priority(solution, currentSolution))
-                        oneSolutions[omr.Index] = solution;
+                Correction correction = Solve(omr);
+                List<(Solution, int)> entitySolutions = entityToSolutions.GetOrCreateValue(omr.Index);
+                Solution solution = new Solution([omr.Index], [correction]);
+                entitySolutions.Add((solution, 0));
+            }
+
+            foreach (var tmr in twoMovementsResolutions) {
+                (Correction c1, Correction c2) = Solve(tmr);
+                
+                (int id1, int id2) = tmr.Indices;
+                Solution solution = new Solution([id1, id2], [c1, c2]);
+                
+                List<(Solution, int)> entity1Solutions = entityToSolutions.GetOrCreateValue(tmr.Indices.Item1);
+                List<(Solution, int)> entity2Solutions = entityToSolutions.GetOrCreateValue(tmr.Indices.Item2);
+
+                entity1Solutions.Add((solution, 0));
+                entity2Solutions.Add((solution, 1));
+            }
+
+            return entityToSolutions;
+        }
+
+        private Dictionary<int, Correction> GetSingleCorrections(Dictionary<int, List<(Solution, int)>> entityToSolutions) {
+            Dictionary<int, Correction> entityToCorrections = new();
+            HashSet<int> blockedEntities = new();
+            
+            foreach (var entityToSolution in entityToSolutions) {
+                int id = entityToSolution.Key;
+
+                if (blockedEntities.Contains(id))
+                    continue;
+
+                if (entityToSolution.Value.Count == 0)
+                    continue;
+                
+                (Solution solution, int correctionIndex) = entityToSolution.Value[0];
+                if (entityToSolution.Value.Count() == 1) { // if hit only 1 entity, moving or not : include
+                    entityToCorrections.Add(id, solution.Corrections[correctionIndex]);
                     continue;
                 }
 
-                oneSolutions.Add(omr.Index, solution);
+                // More than 2 collisions
+                bool hitMultipleEntitiesWithAtLeastOneMoving = false;
+                Correction currentCorrection = solution.Corrections[correctionIndex];
+                for (int i = 0; i < entityToSolution.Value.Count(); i++) {
+                    (Solution evaluatedSolution, int evaluatedCorrectionIndex) = entityToSolution.Value[i];
+
+                    if (evaluatedSolution.Entities.Length > 1) { // if collision involves another moving entity
+                        hitMultipleEntitiesWithAtLeastOneMoving = true;
+                        BlockEntity(id);
+                        break;
+                    }
+
+                    Correction evaluatedCorrection = evaluatedSolution.Corrections[evaluatedCorrectionIndex];
+                    if (evaluatedCorrection.HasPriorityAgainst(currentCorrection))
+                        currentCorrection = evaluatedCorrection;
+
+                }
+
+                if (!hitMultipleEntitiesWithAtLeastOneMoving)
+                    entityToCorrections.Add(id, currentCorrection);
             }
 
-            // NOT SAFE
-            foreach (var tmr in twoMovementsResolutions) {
-                (Solution solution1, Solution solution2) = Solve(tmr);
-                oneSolutions.Add(tmr.Indices.Item1, solution1);
-                oneSolutions.Add(tmr.Indices.Item2, solution2);
+            void BlockEntity(int keyID) {
+                blockedEntities.Add(keyID);
+
+                if (!entityToCorrections.TryAdd(keyID, new Correction()))
+                    entityToCorrections[keyID] = new Correction();
+
+                List<(Solution, int)> solutionsList = entityToSolutions[keyID];
+                entityToSolutions.Remove(keyID);
+
+                foreach ((Solution solution, int _) in solutionsList) {
+                    foreach (var collidingEntity in solution.Entities) {
+                        if (blockedEntities.Contains(collidingEntity))
+                            continue;
+
+                        int solutionID = entityToSolutions[collidingEntity].FindIndex(x => x.Item1 == solution);
+                        entityToSolutions[collidingEntity].RemoveAt(solutionID);
+
+                        BlockEntity(collidingEntity);
+                    }
+                }
             }
 
-            // Dictionary<int, List<(Solution, int)>> twoSolutions = new();
-
-            // foreach (var tmr in twoMovementsResolutions) {
-            //     (Solution solution1, Solution solution2) = Solve(tmr);
-            //     if (!twoSolutions.ContainsKey(tmr.Index1) && !twoSolutions.ContainsKey(tmr.Index2)) {
-            //         twoSolutions.Add(tmr.Index1, new List<(Solution, int)> {
-            //             (solution1, tmr.Index2)
-            //         });
-
-            //         twoSolutions.Add(tmr.Index2, new List<(Solution, int)> {
-            //             (solution2, tmr.Index1)
-            //         });
-            //     } else if (twoSolutions.TryGetValue(tmr.Index1, out var currentSolutions1) && !twoSolutions.ContainsKey(tmr.Index2)) {
-            //         if (!Priority(solution1, currentSolutions1[0].Item1)) {
-            //             currentSolutions1.Add((solution1, tmr.Index2));
-            //             twoSolutions.Add(tmr.Index2, new List<(Solution, int)> {
-            //                 (solution2, tmr.Index1)
-            //             });
-            //         } else  {
-
-            //         }
-            //     } else if ((!twoSolutions.TryGetValue(tmr.Index1, out var currentSolutions1) || Priority(solution1, currentSolutions1[0].Item1))
-            //         && (!twoSolutions.TryGetValue(tmr.Index2, out var currentSolutions2) || Priority(solution2, currentSolutions2[0].Item1))) {
-            //         currentSolutions1.Insert(0, (solution1, tmr.Index2));
-
-            //         int otherIndex = currentSolutions1
-            //     }
-
-
-            //     if (oneSolutions.TryGetValue(tmr.Index1, out Solution currentSolution1) && Priority(solution1, currentSolution1)) {
-            //         oneSolutions[tmr.Index1] = solution1;
-            //         oneSolutions.Remove(tmr.Index2); // No, need to rollback to previous solution if there was one
-            //         // + Keep the other one in current Solution ! Currently have only the new one
-            //         continue;
-            //     }
-
-            //     oneSolutions.Add(tmr.Index, solution);
-            // }
-
-            foreach (var solution in oneSolutions) {
-                velocities[solution.Key].Value = solution.Value.Velocity;
-            }
-
-            // Case 1 : it they have no Bounce component
-                // If only 1 has velocity (& no static, of couse) -> update it linearly
-                // If both have velocity -> find where to relocate them based on their velocity (& velocity "speed")
-            
-            
-            // Case 2 : one of them has a bounce component
-                // If the other one is static : update the first according to its velocity
-                // If the other one is not static : ???
-                // If the other one also has a bounce component : ???
-            
-            // Make sure to calculate all the results before applying them : we still have to check for multiple collisions happening at the same time for the same object
+            return entityToCorrections;
         }
 
-        private bool Priority(Solution s1, Solution s2) => s1.Length < s2.Length;
-
-        private Solution Solve(OneMovementResolution datas) {
+        private Correction Solve(OneMovementData datas) {
             Vector2 correctedVelocity = GetCorrectedVelocity(datas.PenetrationDatas, datas.Velocity);
-            return new Solution(correctedVelocity, correctedVelocity.Length());
+            return new Correction(correctedVelocity, correctedVelocity.Length());
         }
 
-        private (Solution, Solution) Solve(TwoMovementsResolution datas) {            
+        private (Correction, Correction) Solve(TwoMovementsData datas) {            
             (Vector2 velocity1, Vector2 velocity2) = datas.Velocities;
             
             float speed1 = velocity1.Length();
             float speed2 = velocity2.Length();
 
             if (speed1 == 0 || speed2 == 0)
-                return (new Solution(Vector2.Zero, 0.0f), new Solution(Vector2.Zero, 0.0f));
+                return (new Correction(Vector2.Zero, 0.0f), new Correction(Vector2.Zero, 0.0f));
 
             float ratio = speed1 / (speed1 + speed2);
 
@@ -171,7 +215,7 @@ namespace neongine {
             Vector2 correctedVelocity1 = Vector2.Normalize(velocity1) * correctedVelocity1Length;
             Vector2 correctedVelocity2 = Vector2.Normalize(velocity2) * correctedVelocity2Length;
 
-            return (new Solution(correctedVelocity1, correctedVelocity1Length), new Solution(correctedVelocity2, correctedVelocity2Length));
+            return (new Correction(correctedVelocity1, correctedVelocity1Length), new Correction(correctedVelocity2, correctedVelocity2Length));
         }
 
         private Vector2 GetCorrectedVelocity(Penetration[] penetrationDatas, Vector2 velocity) {
