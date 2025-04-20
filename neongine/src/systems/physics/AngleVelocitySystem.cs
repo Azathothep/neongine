@@ -16,7 +16,7 @@ namespace neongine
         {
             m_Query = new Query<AngleVelocity, Point>(new IQueryFilter[]
             {
-
+                new QueryFilter<Collider>(FilterTerm.HasNot) // CollisionSystem doesn't support AngleVelocitied entities
             });
         }
 
