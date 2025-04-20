@@ -12,7 +12,7 @@ namespace neongine
         public EntityID EntityID { get ; private set ; }
 
         [Serialize]
-        private float m_Value;
+        private float m_Value = 1.0f;
         public float Value {
             get => m_Value;
             set => m_Value = value;

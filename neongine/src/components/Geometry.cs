@@ -44,6 +44,45 @@ namespace neongine
             return base.GetHashCode();
         }
 
+        public static implicit operator Shape(Geometry geometry) {
+            return new Shape(geometry);
+        }
+
+        private Vector2[] BuildCircle(float diameter) {
+            Vector2[] vertices = new Vector2[2];
+            vertices[0] = Vector2.Zero;
+            vertices[1] = new Vector2(diameter / 2, 0);
+
+            return vertices;
+        }
+
+        private Vector2[] BuildRectangle(float width, float height, float rotation) {
+            Vector2[] points = new Vector2[4];
+
+            float x = width / 2;
+            float y = height / 2;
+
+            if (rotation == 0.0f) {
+                points[0] = new Vector2(-x, y);
+                points[1] = new Vector2(x, y);
+                points[2] = new Vector2(x, -y);
+                points[3] = new Vector2(-x, -y);
+
+                return points;
+            }
+
+            double rad = float.DegreesToRadians(-rotation);
+            float cos = (float)Math.Cos(rad);
+            float sin = (float)Math.Sin(rad);
+
+            points[0] = new Vector2((- x) * cos + y * sin, - (- x) * sin + y * cos);
+            points[1] = new Vector2(x * cos + y * sin, - x * sin + y * cos);
+            points[2] = -points[0];
+            points[3] = -points[1];
+
+            return points;
+        }
+
         public static Vector2[] RotatePoints(Geometry geometry, Vector2 size, float rotation) {
             switch (geometry.Type)
             {

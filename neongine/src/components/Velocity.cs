@@ -8,14 +8,14 @@ namespace neongine
         public EntityID EntityID { get; private set; }
 
         [Serialize]
-        public Vector3 Value;
+        public Vector2 Value;
 
         public Velocity()
         {
 
         }
 
-        public Velocity(Vector3 value)
+        public Velocity(Vector2 value)
         {
             this.Value = value;
         }

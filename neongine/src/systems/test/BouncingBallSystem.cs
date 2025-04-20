@@ -13,9 +13,9 @@ namespace neongine {
         ]);
 
         [Serialize]
-        private Bounds m_Bounds;
+        private Rect m_Bounds;
 
-        public BouncingBallSystem(Bounds bounds) {
+        public BouncingBallSystem(Rect bounds) {
             m_Bounds = bounds;
         }
 

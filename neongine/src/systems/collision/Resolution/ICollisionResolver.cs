@@ -4,11 +4,12 @@ using System.Linq;
 using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
+using neon;
 
 namespace neongine
 {
     public interface ICollisionResolver
     {
-        public void Resolve(Collision[] collisionDatas, (int, int)[] indices, Point[] points, ColliderShape[] shapes, Velocity[] velocities, bool[] isStatic);
+        public void Resolve(CollisionData[] collisionDatas, EntityID[] entityIDs, Velocity[] velocities, bool[] isStatic);
     }
 }

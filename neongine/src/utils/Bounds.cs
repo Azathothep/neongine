@@ -1,10 +1,13 @@
 using System;
+using System.Data;
 using System.Diagnostics;
 using Microsoft.Xna.Framework;
+using neon;
 
 namespace neongine {
-    [Serializable]
-    public struct Bounds {
+    [DoNotSerialize]
+    public class Bounds
+    {
         [Serialize]
         public float X;
 
@@ -21,6 +24,13 @@ namespace neongine {
 
         }
 
+        public Bounds(Bounds other) {
+            this.X = other.X;
+            this.Y = other.Y;
+            this.Width = other.Width;
+            this.Height = other.Height;
+        }
+
         public Bounds(float x, float y, float width, float height) {
             this.X = x;
             this.Y = y;
@@ -29,13 +39,17 @@ namespace neongine {
         }
 
         public Bounds(Shape shape) {
+            Update(shape);
+        }
+
+        public void Update(Shape shape) {
             if (shape.Vertices == null) {
                 Debug.WriteLine("Cannot create bounds : shape has no vertices !");
                 return;
-            } else if (shape.Vertices.Length == 2)
-                BuildCircleBounds(shape.Vertices[1].X);
-            else
+            } else if (shape.IsPolygon)
                 BuildPolygonBounds(shape.Vertices);
+            else
+                BuildCircleBounds(shape.Radius);
         }
 
         private void BuildCircleBounds(float radius) {
@@ -68,12 +82,13 @@ namespace neongine {
             this.Height = yMax - yMin;
         }
 
-        public static bool Crossing(Vector3 p1, Bounds b1, Vector3 p2, Bounds b2) {
-            (Vector3 lp, Bounds lb, Vector3 rp, Bounds rb) = p1.X + b1.X < p2.X + b2.X ? (p1, b1, p2, b2) : (p2, b2, p1, b1);
-            (Vector3 tp, Bounds tb, Vector3 bp, Bounds bb) = p1.Y + b1.Y < p2.Y + b2.Y ? (p1, b1, p2, b2) : (p2, b2, p1, b1);
+        public static bool Crossing(Vector2 p1, Bounds b1, Vector2 p2, Bounds b2) {
+            (Vector2 lp, Bounds lb, Vector2 rp, Bounds rb) = p1.X + b1.X < p2.X + b2.X ? (p1, b1, p2, b2) : (p2, b2, p1, b1);
+            (Vector2 tp, Bounds tb, Vector2 bp, Bounds bb) = p1.Y + b1.Y < p2.Y + b2.Y ? (p1, b1, p2, b2) : (p2, b2, p1, b1);
 
             return ((rp.X + rb.X) <= (lp.X + lb.Width / 2))
             && ((bp.Y + bb.Y) <= (tp.Y + tb.Height / 2));
         }
     }
 }
+

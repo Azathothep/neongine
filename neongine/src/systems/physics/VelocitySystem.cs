@@ -8,7 +8,7 @@ using System.Diagnostics;
 
 namespace neongine
 {
-    [Serialize]
+    [Serialize, Order(OrderType.After, typeof(CollisionSystem))]
     public class VelocitySystem : IUpdateSystem
     {
         private Query<Point, Velocity> m_Query;
@@ -27,7 +27,7 @@ namespace neongine
                 Point p = r.Item2;
                 Velocity v = r.Item3;
 
-                p.WorldPosition = p.WorldPosition + v.Value;
+                p.WorldPosition = p.WorldPosition + new Vector3(v.Value.X, v.Value.Y, 0);
             }
         }
     }

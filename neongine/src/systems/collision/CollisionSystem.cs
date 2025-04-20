@@ -5,58 +5,88 @@ using Microsoft.Xna.Framework.Graphics;
 using neon;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 
 namespace neongine
 {
+    public struct CollisionDetectionData {
+        public CollisionData[] Collisions;
+        public (EntityID, EntityID)[] Triggers;
+    }
+
+    public struct CollisionData {
+        public (EntityID, EntityID) Entities;
+        public Collision Collision;
+    }
+
     public class CollisionSystem : IUpdateSystem, IDrawSystem
     {
-        private static CollisionSystem m_Instance;
+        private static CollisionSystem instance;
 
-        private Query<Point, Collider, ColliderShape, ColliderBounds, Velocity, IsStatic> m_Query = new(
-            [
-                new QueryFilter<ColliderShape>(FilterTerm.MightHave),
-                new QueryFilter<ColliderBounds>(FilterTerm.MightHave),
-                new QueryFilter<Velocity>(FilterTerm.MightHave),
-                new QueryFilter<IsStatic>(FilterTerm.MightHave)
-            ]);
-
-        private ISpacePartitioner m_SpacePartitioner;
-        private ICollisionProcessor m_CollisionProcessor;
-        private ICollisionResolver m_CollisionResolver;
-
-        private SpriteBatch m_SpriteBatch;
-
-        private HashSet<EntityID> m_IsColliding = new();
-        private Dictionary<(EntityID, EntityID), Collision> m_LastCollisionPairs = new();
-        private HashSet<(EntityID, EntityID)> m_LastTriggerPairs = new();
-
-        private struct QueryResultArray {
+#region definitions
+        private struct QueryResultSOA {
             public int Length;
             public EntityID[] IDs;
-            public Vector3[] Positions;
+            public Vector2[] Positions;
             public float[] Rotations;
             public Vector2[] Scales;
             public Point[] Points;
             public Velocity[] Velocities;
             public Collider[] Colliders;
-            public ColliderShape[] Shapes;
-            public ColliderBounds[] Bounds;
+            public Shape[] Shapes;
+            public Bounds[] Bounds;
             public bool[] IsStatic;
+
+            public QueryResultSOA(int count) {
+                Length = count;
+                IDs = new EntityID[count];
+                Positions = new Vector2[count];
+                Rotations = new float[count];
+                Scales = new Vector2[count];
+                Points = new Point[count];
+                Velocities = new Velocity[count];
+                Colliders = new Collider[count];
+                Shapes = new Shape[count];
+                Bounds = new Bounds[count];
+                IsStatic = new bool[count];
+            }
         }
 
-        private QueryResultArray m_LastQueryResultArray = new();
+        private struct FrameDataStorage {
+            public HashSet<EntityID> IsColliding = new();
+            public Dictionary<(EntityID, EntityID), Collision> CollisionPairs = new();
+            public HashSet<(EntityID, EntityID)> TriggerPairs = new();
 
+            public FrameDataStorage() { }
+        }
+#endregion
+
+        private Query<Point, Collider, Velocity, IsStatic> m_Query = new(
+            [
+                new QueryFilter<Velocity>(FilterTerm.MightHave),
+                new QueryFilter<IsStatic>(FilterTerm.MightHave)
+            ]);
+
+        private ISpacePartitioner m_SpacePartitioner;
+        private ICollisionDetector m_CollisionDetector;
+        private ICollisionResolver m_CollisionResolver;
+
+        private SpriteBatch m_SpriteBatch;
+        private FrameDataStorage m_Storage = new();
+        private QueryResultSOA m_QueryResultArray = new();
+
+#region events
         private Dictionary<EntityID, List<Action<EntityID, Collision>>> m_OnColliderEnter = new();
         private Dictionary<EntityID, List<Action<EntityID>>> m_OnColliderExit = new();
         private Dictionary<EntityID, List<Action<EntityID>>> m_OnTriggerEnter = new();
         private Dictionary<EntityID, List<Action<EntityID>>> m_OnTriggerExit = new();
 
-        public static void OnColliderEnter(EntityID id, Action<EntityID, Collision> action) => SubscribeEvent(m_Instance.m_OnColliderEnter, id, action);
-        public static void OnColliderExit(EntityID id, Action<EntityID> action) => SubscribeEvent(m_Instance.m_OnColliderExit, id, action);
-        public static void OnTriggerEnter(EntityID id, Action<EntityID> action) => SubscribeEvent(m_Instance.m_OnTriggerEnter, id, action);
-        public static void OnTriggerExit(EntityID id, Action<EntityID> action) => SubscribeEvent(m_Instance.m_OnTriggerExit, id, action);
-
+        public static void OnColliderEnter(EntityID id, Action<EntityID, Collision> action) => SubscribeEvent(instance.m_OnColliderEnter, id, action);
+        public static void OnColliderExit(EntityID id, Action<EntityID> action) => SubscribeEvent(instance.m_OnColliderExit, id, action);
+        public static void OnTriggerEnter(EntityID id, Action<EntityID> action) => SubscribeEvent(instance.m_OnTriggerEnter, id, action);
+        public static void OnTriggerExit(EntityID id, Action<EntityID> action) => SubscribeEvent(instance.m_OnTriggerExit, id, action);
+        
         private static void SubscribeEvent<T>(Dictionary<EntityID, List<T>> dictionary, EntityID id, T action) {
             if (!dictionary.TryGetValue(id, out List<T> actions)) {
                 actions = new List<T>();
@@ -65,86 +95,59 @@ namespace neongine
 
             actions.Add(action);
         }
+#endregion
 
-        public CollisionSystem(ISpacePartitioner spacePartitioner, ICollisionProcessor collisionProcessor, ICollisionResolver collisionResolver, SpriteBatch spriteBatch)
+        public CollisionSystem(ISpacePartitioner spacePartitioner, ICollisionDetector collisionDetector, ICollisionResolver collisionResolver, SpriteBatch spriteBatch)
         {
-            m_Instance = this;
+            instance = this;
 
             m_SpacePartitioner = spacePartitioner;
-            m_CollisionProcessor = collisionProcessor;
+            m_CollisionDetector = collisionDetector;
             m_CollisionResolver = collisionResolver;
             m_SpriteBatch = spriteBatch;
         }
 
         public void Update(TimeSpan timeSpan)
         {
-            IEnumerable<(EntityID, Point, Collider, ColliderShape, ColliderBounds, Velocity, IsStatic)> queryResult = QueryBuilder.Get(m_Query, QueryType.Cached, QueryResultMode.Safe);
+            IEnumerable<(EntityID, Point, Collider, Velocity, IsStatic)> queryResult = QueryBuilder.Get(m_Query, QueryType.Cached, QueryResultMode.Safe);
 
-            QueryResultArray query = MakeResultArray(queryResult);
-
-            List<int> boundsToUpdate = new();
+            QueryResultSOA query = Convert(queryResult);
 
             for (int i = 0; i < query.Length; i++) {
-                if (query.Shapes[i].Update(query.Colliders[i], query.Rotations[i], query.Scales[i]))
-                    boundsToUpdate.Add(i);
+                query.Colliders[i].UpdateShape(query.Rotations[i], query.Scales[i]);
             }
 
-            foreach (var i in boundsToUpdate) {
-                query.Bounds[i].Update(query.Shapes[i].Shape);
-            }
+            IEnumerable<(EntityID, EntityID)> partition = m_SpacePartitioner.Partition(query.IDs, query.Positions, query.Bounds);
 
-            IEnumerable<(int, int)> partition = m_SpacePartitioner.Partition(query.Positions, query.Bounds);
+            CollisionDetectionData detectionData = m_CollisionDetector.Detect(partition, query.IDs, query.Positions, query.Colliders, query.Shapes, query.Bounds);
 
-            ((int, int)[], Collision[]) collisions;
-            (int, int)[] triggers;
+            m_CollisionResolver.Resolve(detectionData.Collisions, query.IDs, query.Velocities, query.IsStatic);
 
-            m_CollisionProcessor.GetCollisions(partition, query.Positions, query.Colliders, query.Shapes, query.Bounds, out collisions, out triggers);
+            FrameDataStorage currentStorage = Convert(detectionData);
 
-            m_CollisionResolver.Resolve(collisions.Item2, collisions.Item1, query.Points, query.Shapes, query.Velocities, query.IsStatic);
+            TriggerEvents(currentStorage);
 
-            Dictionary<(EntityID, EntityID), Collision> collisionPairs;
-            HashSet<(EntityID, EntityID)> triggerPairs;
-            HashSet<EntityID> isColliding;
+            m_Storage = currentStorage;
 
-            GetCollisionPairs(query.IDs, collisions, triggers, out collisionPairs, out triggerPairs, out isColliding);
-
-            TriggerEvents(triggerPairs, collisionPairs);
-
-            m_LastTriggerPairs = triggerPairs;
-            m_LastCollisionPairs = collisionPairs;
-            m_IsColliding = isColliding;
-
-            m_LastQueryResultArray = query;
+            m_QueryResultArray = query;
         }
 
-        private QueryResultArray MakeResultArray(IEnumerable<(EntityID, Point, Collider, ColliderShape, ColliderBounds, Velocity, IsStatic)> queryResult) {
+        private QueryResultSOA Convert(IEnumerable<(EntityID, Point, Collider, Velocity, IsStatic)> queryResult) {
             int count = queryResult.Count();
 
-            QueryResultArray query = new QueryResultArray() {
-                Length = count,
-                IDs = new EntityID[count],
-                Positions = new Vector3[count],
-                Rotations = new float[count],
-                Scales = new Vector2[count],
-                Points = new Point[count],
-                Velocities = new Velocity[count],
-                Colliders = new Collider[count],
-                Shapes = new ColliderShape[count],
-                Bounds = new ColliderBounds[count],
-                IsStatic = new bool[count]
-            };
+            QueryResultSOA query = new QueryResultSOA(count);
 
             int index = 0;
-            foreach ((EntityID id, Point p, Collider c, ColliderShape s, ColliderBounds b, Velocity v, IsStatic isStatic) in queryResult) {
+            foreach ((EntityID id, Point p, Collider c, Velocity v, IsStatic isStatic) in queryResult) {
                 query.IDs[index] = id;
-                query.Positions[index] = v == null ? p.WorldPosition : p.WorldPosition + v.Value;
+                query.Positions[index] = v == null ? p.WorldPosition2D : p.WorldPosition2D + v.Value;
                 query.Rotations[index] = p.WorldRotation;
                 query.Scales[index] = p.WorldScale;
                 query.Points[index] = p;
                 query.Velocities[index] = v;
                 query.Colliders[index] = c;
-                query.Shapes[index] = s == null ? id.Add<ColliderShape>() : s;
-                query.Bounds[index] = b == null ? id.Add<ColliderBounds>() : b;
+                query.Shapes[index] = c.Shape;
+                query.Bounds[index] = c.Bound;
                 query.IsStatic[index] = isStatic != null;
 
                 index++;
@@ -153,63 +156,56 @@ namespace neongine
             return query;
         }
 
-        private void GetCollisionPairs(EntityID[] entityIDs, ((int, int)[], Collision[]) collisionDatas, (int, int)[] triggers, out Dictionary<(EntityID, EntityID), Collision> collisionPairs, out HashSet<(EntityID, EntityID)> triggerPairs, out HashSet<EntityID> isColliding) {
-            triggerPairs = new();
-            collisionPairs = new();
-            isColliding = new();
-            
-            ((int, int)[] collisionIndices, Collision[] collisions) = collisionDatas;
+        private FrameDataStorage Convert(CollisionDetectionData detectionDatas) {
+            FrameDataStorage storage = new FrameDataStorage();
 
-            int i = 0;
-            foreach ((int i1, int i2) in collisionIndices) {
-                (EntityID id1, EntityID id2) = (entityIDs[i1], entityIDs[i2]);
-                collisionPairs.Add((id1, id2), collisions[i]);
-                isColliding.Add(id1);
-                isColliding.Add(id2);
-                i++;
+            for (int i = 0; i < detectionDatas.Collisions.Length; i++) {
+                storage.CollisionPairs.Add(detectionDatas.Collisions[i].Entities, detectionDatas.Collisions[i].Collision);
+                storage.IsColliding.Add(detectionDatas.Collisions[i].Entities.Item1);
+                storage.IsColliding.Add(detectionDatas.Collisions[i].Entities.Item2);
             }
 
-            foreach ((int i1, int i2) in triggers)
-            {
-                (EntityID id1, EntityID id2) = (entityIDs[i1], entityIDs[i2]);
-                triggerPairs.Add((id1, id2));
-                isColliding.Add(id1);
-                isColliding.Add(id2);
+            for (int i = 0; i < detectionDatas.Triggers.Length; i++) {
+                storage.TriggerPairs.Add(detectionDatas.Triggers[i]);
+                storage.IsColliding.Add(detectionDatas.Triggers[i].Item1);
+                storage.IsColliding.Add(detectionDatas.Triggers[i].Item2);
             }
+
+            return storage;
         }
 
-        private void TriggerEvents(HashSet<(EntityID, EntityID)> currentTriggersPairs, Dictionary<(EntityID, EntityID), Collision> currentCollisionsPairs) {            
+        private void TriggerEvents(FrameDataStorage currentStorage) {            
             Collision collision;
 
             // COLLIDER ENTER
-            foreach (var currentCollision in currentCollisionsPairs) {
+            foreach (var currentCollision in currentStorage.CollisionPairs) {
                 (EntityID id1, EntityID id2) = currentCollision.Key;
 
-                if (!m_LastCollisionPairs.TryGetValue((id1, id2), out collision) && !m_LastCollisionPairs.TryGetValue((id2, id1), out collision))
+                if (!m_Storage.CollisionPairs.TryGetValue((id1, id2), out collision) && !m_Storage.CollisionPairs.TryGetValue((id2, id1), out collision))
                     SendEvents(id1, id2, collision, m_OnColliderEnter);
             }
 
             // TRIGGER ENTER
-            foreach (var currentTrigger in currentTriggersPairs) {
+            foreach (var currentTrigger in currentStorage.TriggerPairs) {
                 (EntityID id1, EntityID id2) = currentTrigger;
 
-                if (!m_LastTriggerPairs.Contains((id1, id2)) && !m_LastTriggerPairs.Contains((id2, id1)))
+                if (!m_Storage.TriggerPairs.Contains((id1, id2)) && !m_Storage.TriggerPairs.Contains((id2, id1)))
                     SendEvents(id1, id2, m_OnTriggerEnter);
             }
 
             // COLLIDER EXIT
-            foreach (var lastCollision in m_LastCollisionPairs) {
+            foreach (var lastCollision in m_Storage.CollisionPairs) {
                 (EntityID id1, EntityID id2) = lastCollision.Key;
 
-                if (!currentCollisionsPairs.ContainsKey((id1, id2)) && !currentCollisionsPairs.ContainsKey((id2, id1)))
+                if (!currentStorage.CollisionPairs.ContainsKey((id1, id2)) && !currentStorage.CollisionPairs.ContainsKey((id2, id1)))
                     SendEvents(id1, id2, m_OnColliderExit);
             }
 
             // TRIGGER EXIT
-            foreach (var lastTrigger in m_LastTriggerPairs) {
+            foreach (var lastTrigger in m_Storage.TriggerPairs) {
                 (EntityID id1, EntityID id2) = lastTrigger; 
 
-                if (!currentTriggersPairs.Contains((id1, id2)) && !currentTriggersPairs.Contains((id2, id1)))
+                if (!currentStorage.TriggerPairs.Contains((id1, id2)) && !currentStorage.TriggerPairs.Contains((id2, id1)))
                     SendEvents(id1, id2, m_OnTriggerExit);
             }
         }
@@ -236,47 +232,42 @@ namespace neongine
 
             m_SpriteBatch.Begin();
 
-            for (int i = 0; i < m_LastQueryResultArray.Length; i++) {
-                (EntityID id, Vector3 p, Collider c, ColliderShape s, ColliderBounds b) = (   m_LastQueryResultArray.IDs[i],
-                                                                                            m_LastQueryResultArray.Positions[i],
-                                                                                            m_LastQueryResultArray.Colliders[i],
-                                                                                            m_LastQueryResultArray.Shapes[i],
-                                                                                            m_LastQueryResultArray.Bounds[i]);
+            for (int i = 0; i < m_QueryResultArray.Length; i++) {
+                (EntityID id, Vector2 pos, Point p, Collider c, Shape s, Bounds b) = (   m_QueryResultArray.IDs[i],
+                                                                                            m_QueryResultArray.Positions[i],
+                                                                                            m_QueryResultArray.Points[i],
+                                                                                            m_QueryResultArray.Colliders[i],
+                                                                                            m_QueryResultArray.Shapes[i],
+                                                                                            m_QueryResultArray.Bounds[i]);
 
-                Color color = m_IsColliding.Contains(id) ? Color.Red : Color.Yellow;
+                Color color = m_Storage.IsColliding.Contains(id) ? Color.Red : Color.Yellow;
 
-                switch (c.Geometry.Type) {
-                    case GeometryType.Circle:
-                        DrawCircle(p, s.Shape.Vertices[1].X, c, color);
-                        break;
-                    default:
-                        DrawPolygon(p, s.Shape.Vertices, color);
-                        break;
-                }
+                if (c.BaseShape.IsPolygon)
+                    DrawPolygon(p.WorldPosition2D, s.Vertices, color);
+                else
+                    DrawCircle(p.WorldPosition2D, s.Radius, color);
 
-                // DrawBounds(p, b.Bounds);
+                // DrawBounds(p, b);
             }
-
 
             m_SpriteBatch.End();
 #endif
         }
 
-        private void DrawCircle(Vector3 p, float radius, Collider c, Color color) {
+        private void DrawCircle(Vector2 p, float radius, Color color) {
             MonoGame.Primitives2D.DrawCircle(m_SpriteBatch,
-                            new Vector2(p.X, p.Y),
-                            c.Size * radius,
-                            8,
+                            p,
+                            radius,
+                            16,
                             color);
         }
 
-        private void DrawPolygon(Vector3 p, Vector2[] vertices, Color color) {
-            Vector2 position2D = new Vector2(p.X, p.Y);
+        private void DrawPolygon(Vector2 p, Vector2[] vertices, Color color) {
             for (int i = 0; i < vertices.Length - 1; i++) {
-                MonoGame.Primitives2D.DrawLine(m_SpriteBatch, position2D + vertices[i], position2D + vertices[i + 1], color);
+                MonoGame.Primitives2D.DrawLine(m_SpriteBatch, p + vertices[i], p + vertices[i + 1], color);
             }
 
-            MonoGame.Primitives2D.DrawLine(m_SpriteBatch, position2D + vertices[vertices.Length - 1], position2D + vertices[0], color);
+            MonoGame.Primitives2D.DrawLine(m_SpriteBatch, p + vertices[vertices.Length - 1], p + vertices[0], color);
         }
 
         private void DrawBounds(Point p, Bounds bounds) {

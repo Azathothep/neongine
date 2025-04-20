@@ -3,12 +3,7 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using System.Diagnostics;
 using neon;
-using System;
-using Newtonsoft.Json;
-using System.ComponentModel;
 using System.IO;
-using System.ComponentModel.DataAnnotations;
-using System.Net.Mime;
 
 
 namespace neongine
@@ -47,9 +42,13 @@ namespace neongine
 
             Neongine.LoadCommonSystems(_spriteBatch);
 
+            Neongine.LoadCollisionSystems(_spriteBatch);
+
             Neongine.LoadEditorSystems(_spriteBatch);
             
-            TestBallScenes();
+            TestCollisionResolutionScene();
+
+            // TestBallScenes();
 
             // LoadScene();
 
@@ -57,7 +56,7 @@ namespace neongine
         }
 
         private void TestBallScenes() {
-            Bounds bounds = new Bounds(50, 50, 700, 400);
+            Rect bounds = new Rect(50, 50, 700, 400);
 
             Systems.Add(new VelocitySystem());
             Systems.Add(new AngleVelocitySystem());
@@ -65,9 +64,49 @@ namespace neongine
             Systems.Add(new BouncingBallSystem(bounds));
         }
 
+        private void TestCollisionResolutionScene() {
+
+            EntityID entityID = Neongine.Entity();
+            Point point = entityID.Get<Point>();
+            point.WorldPosition = new Vector3(500, 200, 0);
+            point.WorldRotation = 45.0f;
+            Velocity entityVelocity = entityID.Add<Velocity>();
+            entityID.Add(new Renderer(Assets.GetAsset<Texture2D>("ball")));
+            //entityID.Add<IsDraggable>();
+            entityID.Add(new Collider(new Geometry(GeometryType.Rectangle, 60), 1.0f));
+
+            EntityID wallID = Neongine.Entity();
+            Point wallPoint = wallID.Get<Point>();
+            Velocity wallVelocity = wallID.Add<Velocity>();
+            wallPoint.WorldRotation = 37.0f;
+            wallPoint.WorldPosition = new Vector3(200, 200, 0);
+            wallID.Add(new Renderer(Assets.GetAsset<Texture2D>("ball")));
+            wallID.Add(new Collider(new Shape([
+                                                new Vector2(0, 50),
+                                                new Vector2(60, 30),
+                                                new Vector2(45, -30),
+                                                new Vector2(0, -50),
+                                                new Vector2(-45,0),
+                                                new Vector2(-30, 30)
+                                            ]), 1.0f));
+
+            // EntityID wallID2 = Neongine.Entity();
+            // Point wallPoint2 = wallID2.Get<Point>();
+            // wallPoint2.WorldPosition = new Vector3(400, 200, 0);
+            // wallID2.Add(new Collider(new Geometry(GeometryType.Rectangle, 80)));
+
+            Systems.Add(new ManualVelocityControlSystem(entityVelocity, 3.0f));
+            Systems.Add(new ManualVelocityControlSystem(wallVelocity, -2.0f));
+
+            Systems.Add(new VelocitySystem());
+            Systems.Add(new AngleVelocitySystem());
+        }
+
         private void LoadScene() {
             string scenePath = "./" + Content.RootDirectory + "/" + EditorSaveSystem.SavePath;
             string jsonString = File.ReadAllText(scenePath);
+
+            Debug.WriteLine("Loading scene " + scenePath);
 
             SceneDefinition sceneDefinition = Serializer.DeserializeScene(jsonString);
             

@@ -15,11 +15,11 @@ namespace neongine
         private Texture2D m_Texture;
 
         [Serialize]
-        private Bounds m_Bounds;
+        private Rect m_Bounds;
 
         private Random m_Random = new Random();
 
-        public BallGenerationSystem(Bounds generationBounds)
+        public BallGenerationSystem(Rect generationBounds)
         {
             m_Texture = Assets.GetAsset<Texture2D>("ball");
             m_Bounds = generationBounds;
@@ -59,10 +59,10 @@ namespace neongine
             return new Vector3(m_Bounds.X + x, m_Bounds.Y + y, 0);
         }
 
-        private Vector3 GetRandomDirection() {
+        private Vector2 GetRandomDirection() {
             float angle = float.DegreesToRadians(m_Random.Next(0, 360));
 
-            return new Vector3((float)Math.Cos(angle), (float)Math.Sin(angle), 0);
+            return new Vector2((float)Math.Cos(angle), (float)Math.Sin(angle));
         }
 
         private EntityID Copy(EntityID entity) {

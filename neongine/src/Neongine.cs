@@ -19,18 +19,16 @@ namespace neongine
         public static void LoadCommonSystems(SpriteBatch spriteBatch)
         {
             Systems.Add(new RenderingSystem(spriteBatch));
+        }
 
-            QuadtreeSpacePartitioner qsp = new(spriteBatch);
-
+        public static void LoadCollisionSystems(SpriteBatch spriteBatch) {
+            QuadtreeSpacePartitioner qsp = new QuadtreeSpacePartitioner(spriteBatch);
+            
             Systems.Add(qsp);
 
             Systems.Add(new CollisionSystem(qsp,
-                                            new BaseCollisionProcessor(
-                                            [
-                                                new CircleToCircleCollisionDetector(),
-                                                new RectToRectCollisionDetector()
-                                            ]),
-                                            new BaseCollisionResolver(),
+                                            new SATCollisionDetector(),
+                                            new VelocityCollisionResolver(),
                                             spriteBatch));
         }
 
