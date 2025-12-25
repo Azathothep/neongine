@@ -18,6 +18,9 @@ namespace neongine
 
         public static void LoadCommonSystems(SpriteBatch spriteBatch)
         {
+            EntityID cameraEntity = Neongine.Entity();
+            cameraEntity.Add<Camera>();
+
             Systems.Add(new RenderingSystem(spriteBatch));
         }
 

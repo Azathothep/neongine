@@ -56,7 +56,7 @@ namespace neongine
         }
 
         private void TestBallScenes() {
-            Rect bounds = new Rect(50, 50, 700, 400);
+            Rect bounds = new Rect(0.5f, 0.5f, 7, 4);
 
             Systems.Add(new VelocitySystem());
             Systems.Add(new AngleVelocitySystem());
@@ -92,8 +92,8 @@ namespace neongine
 
             // EntityID wallID2 = Neongine.Entity();
             // Point wallPoint2 = wallID2.Get<Point>();
-            // wallPoint2.WorldPosition = new Vector3(400, 200, 0);
-            // wallID2.Add(new Collider(new Geometry(GeometryType.Rectangle, 80)));
+            // wallPoint2.WorldPosition = new Vector3(4, 2, 0);
+            // wallID2.Add(new Collider(new Geometry(GeometryType.Rectangle, 0.8f)));
 
             Systems.Add(new ManualVelocityControlSystem(entityVelocity, 0.03f));
             Systems.Add(new ManualVelocityControlSystem(wallVelocity, -0.02f));

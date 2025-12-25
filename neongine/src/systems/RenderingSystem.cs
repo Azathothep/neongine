@@ -49,12 +49,12 @@ namespace neongine
         private void Render(Renderer renderer, Vector2 position, float rotation, Vector2 scale)
         {
             m_SpriteBatch.Draw(renderer.Texture,
-                             position,
+                             position * Camera.Main.Factor,
                              null,
                             renderer.Color,
                             rotation * (float)(Math.PI / 180f),
                             new Vector2(renderer.Texture.Width / 2 * renderer.Scale, renderer.Texture.Height / 2 * renderer.Scale) * renderer.Scale,
-                            Vector2.One * scale * renderer.Scale,
+                            Vector2.One * scale * renderer.Scale * Camera.Main.Factor,
                             SpriteEffects.None,
                             0f);
         }
@@ -64,8 +64,8 @@ namespace neongine
             instance.m_SpriteBatch.Begin();
 
             MonoGame.Primitives2D.DrawCircle(instance.m_SpriteBatch,
-                Coordinates.ToPixels(p),
-                radius,
+                Coordinates.ToPixels(p) * Camera.Main.Factor,
+                Coordinates.ToPixels(radius) * Camera.Main.Factor,
                 16,
                 color);
 
@@ -77,10 +77,16 @@ namespace neongine
             instance.m_SpriteBatch.Begin();
 
             for (int i = 0; i < vertices.Length - 1; i++) {
-                MonoGame.Primitives2D.DrawLine(instance.m_SpriteBatch, Coordinates.ToPixels(p + vertices[i]), Coordinates.ToPixels(p + vertices[i + 1]), color);
+                Vector2 startPosition = Coordinates.ToPixels(p + vertices[i]) * Camera.Main.Factor;
+                Vector2 endPosition = Coordinates.ToPixels(p + vertices[i + 1]) * Camera.Main.Factor;
+                MonoGame.Primitives2D.DrawLine(instance.m_SpriteBatch, startPosition, endPosition, color);
             }
 
-            MonoGame.Primitives2D.DrawLine(instance.m_SpriteBatch, Coordinates.ToPixels(p + vertices[vertices.Length - 1]), Coordinates.ToPixels(p + vertices[0]), color);
+            {
+                Vector2 startPosition = Coordinates.ToPixels(p + vertices[vertices.Length - 1]) * Camera.Main.Factor;
+                Vector2 endPosition = Coordinates.ToPixels(p + vertices[0]) * Camera.Main.Factor;
+                MonoGame.Primitives2D.DrawLine(instance.m_SpriteBatch, startPosition, endPosition, color);
+            }
 
             instance.m_SpriteBatch.End();
         }
@@ -90,10 +96,10 @@ namespace neongine
             instance.m_SpriteBatch.Begin();
 
             MonoGame.Primitives2D.DrawRectangle(instance.m_SpriteBatch,
-            new Rectangle((int)Coordinates.ToPixels((p.WorldPosition.X + bounds.X)),
-                        (int)Coordinates.ToPixels((p.WorldPosition.Y + bounds.Y)),
-                        (int)Coordinates.ToPixels(bounds.Width),
-                        (int)Coordinates.ToPixels(bounds.Height)),
+            new Rectangle((int)(Coordinates.ToPixels(p.WorldPosition.X + bounds.X) * Camera.Main.Factor),
+                        (int)(Coordinates.ToPixels(p.WorldPosition.Y + bounds.Y) * Camera.Main.Factor),
+                        (int)(Coordinates.ToPixels(bounds.Width) * Camera.Main.Factor),
+                        (int)(Coordinates.ToPixels(bounds.Height) * Camera.Main.Factor)),
             0.0f,
             Color.Blue);
 

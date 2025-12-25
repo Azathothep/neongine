@@ -12,7 +12,8 @@ namespace neongine
 
         public Camera()
         {
-            
+            if (Camera.Main == null)
+                Camera.Main = this;
         }
 
         public Camera(Camera other) { }
