@@ -68,26 +68,26 @@ namespace neongine
 
             EntityID entityID = Neongine.Entity();
             Point point = entityID.Get<Point>();
-            point.WorldPosition = new Vector3(500, 200, 0);
+            point.WorldPosition = new Vector3(5, 2, 0);
             point.WorldRotation = 45.0f;
             Velocity entityVelocity = entityID.Add<Velocity>();
             entityID.Add(new Renderer(Assets.GetAsset<Texture2D>("ball")));
             //entityID.Add<IsDraggable>();
-            entityID.Add(new Collider(new Geometry(GeometryType.Rectangle, 60), 1.0f));
+            entityID.Add(new Collider(new Geometry(GeometryType.Rectangle, 0.6f), 1.0f));
 
             EntityID wallID = Neongine.Entity();
             Point wallPoint = wallID.Get<Point>();
             Velocity wallVelocity = wallID.Add<Velocity>();
             wallPoint.WorldRotation = 37.0f;
-            wallPoint.WorldPosition = new Vector3(200, 200, 0);
+            wallPoint.WorldPosition = new Vector3(2, 2, 0);
             wallID.Add(new Renderer(Assets.GetAsset<Texture2D>("ball")));
             wallID.Add(new Collider(new Shape([
-                                                new Vector2(0, 50),
-                                                new Vector2(60, 30),
-                                                new Vector2(45, -30),
-                                                new Vector2(0, -50),
-                                                new Vector2(-45,0),
-                                                new Vector2(-30, 30)
+                                                new Vector2(0, 0.5f),
+                                                new Vector2(0.6f, 0.3f),
+                                                new Vector2(0.45f, -0.3f),
+                                                new Vector2(0, -0.5f),
+                                                new Vector2(-0.45f, 0),
+                                                new Vector2(-0.3f, 0.3f)
                                             ]), 1.0f));
 
             // EntityID wallID2 = Neongine.Entity();
@@ -95,8 +95,8 @@ namespace neongine
             // wallPoint2.WorldPosition = new Vector3(400, 200, 0);
             // wallID2.Add(new Collider(new Geometry(GeometryType.Rectangle, 80)));
 
-            Systems.Add(new ManualVelocityControlSystem(entityVelocity, 3.0f));
-            Systems.Add(new ManualVelocityControlSystem(wallVelocity, -2.0f));
+            Systems.Add(new ManualVelocityControlSystem(entityVelocity, 0.03f));
+            Systems.Add(new ManualVelocityControlSystem(wallVelocity, -0.02f));
 
             Systems.Add(new VelocitySystem());
             Systems.Add(new AngleVelocitySystem());

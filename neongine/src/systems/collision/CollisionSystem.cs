@@ -71,8 +71,6 @@ namespace neongine
         private ISpacePartitioner m_SpacePartitioner;
         private ICollisionDetector m_CollisionDetector;
         private ICollisionResolver m_CollisionResolver;
-
-        private SpriteBatch m_SpriteBatch;
         private FrameDataStorage m_Storage = new();
         private QueryResultSOA m_QueryResultArray = new();
 
@@ -97,14 +95,13 @@ namespace neongine
         }
 #endregion
 
-        public CollisionSystem(ISpacePartitioner spacePartitioner, ICollisionDetector collisionDetector, ICollisionResolver collisionResolver, SpriteBatch spriteBatch)
+        public CollisionSystem(ISpacePartitioner spacePartitioner, ICollisionDetector collisionDetector, ICollisionResolver collisionResolver)
         {
             instance = this;
 
             m_SpacePartitioner = spacePartitioner;
             m_CollisionDetector = collisionDetector;
             m_CollisionResolver = collisionResolver;
-            m_SpriteBatch = spriteBatch;
         }
 
         public void Update(TimeSpan timeSpan)
@@ -230,10 +227,8 @@ namespace neongine
         {
 #if DRAW_COLLISIONS
 
-            m_SpriteBatch.Begin();
-
             for (int i = 0; i < m_QueryResultArray.Length; i++) {
-                (EntityID id, Vector2 pos, Point p, Collider c, Shape s, Bounds b) = (   m_QueryResultArray.IDs[i],
+                (EntityID id, Vector2 pos, Point p, Collider c, Shape s, Bounds b) = (      m_QueryResultArray.IDs[i],
                                                                                             m_QueryResultArray.Positions[i],
                                                                                             m_QueryResultArray.Points[i],
                                                                                             m_QueryResultArray.Colliders[i],
@@ -243,41 +238,13 @@ namespace neongine
                 Color color = m_Storage.IsColliding.Contains(id) ? Color.Red : Color.Yellow;
 
                 if (c.BaseShape.IsPolygon)
-                    DrawPolygon(p.WorldPosition2D, s.Vertices, color);
+                    RenderingSystem.DrawPolygon(p.WorldPosition2D, s.Vertices, color);
                 else
-                    DrawCircle(p.WorldPosition2D, s.Radius, color);
+                    RenderingSystem.DrawCircle(p.WorldPosition2D, s.Radius, color);
 
-                // DrawBounds(p, b);
+                // RenderingSystem.DrawBounds(p, b);
             }
-
-            m_SpriteBatch.End();
 #endif
-        }
-
-        private void DrawCircle(Vector2 p, float radius, Color color) {
-            MonoGame.Primitives2D.DrawCircle(m_SpriteBatch,
-                            p,
-                            radius,
-                            16,
-                            color);
-        }
-
-        private void DrawPolygon(Vector2 p, Vector2[] vertices, Color color) {
-            for (int i = 0; i < vertices.Length - 1; i++) {
-                MonoGame.Primitives2D.DrawLine(m_SpriteBatch, p + vertices[i], p + vertices[i + 1], color);
-            }
-
-            MonoGame.Primitives2D.DrawLine(m_SpriteBatch, p + vertices[vertices.Length - 1], p + vertices[0], color);
-        }
-
-        private void DrawBounds(Point p, Bounds bounds) {
-            MonoGame.Primitives2D.DrawRectangle(m_SpriteBatch,
-                new Rectangle((int)(p.WorldPosition.X + bounds.X),
-                            (int)(p.WorldPosition.Y + bounds.Y),
-                            (int)bounds.Width,
-                            (int)bounds.Height),
-                0.0f,
-                Color.Blue);
         }
     }
 }

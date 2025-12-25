@@ -28,8 +28,7 @@ namespace neongine
 
             Systems.Add(new CollisionSystem(qsp,
                                             new SATCollisionDetector(),
-                                            new VelocityCollisionResolver(),
-                                            spriteBatch));
+                                            new VelocityCollisionResolver()));
         }
 
         public static void LoadEditorSystems(SpriteBatch spriteBatch)
