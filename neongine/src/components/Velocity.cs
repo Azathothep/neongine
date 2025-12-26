@@ -3,10 +3,8 @@ using neon;
 
 namespace neongine
 {
-    public class Velocity : IComponent
+    public class Velocity : Component
     {
-        public EntityID EntityID { get; private set; }
-
         [Serialize]
         public Vector2 Value;
 
@@ -25,7 +23,7 @@ namespace neongine
             this.Value = velocity.Value;
         }
 
-        public IComponent Clone()
+        public override Component Clone()
         {
             return new Velocity(this);
         }

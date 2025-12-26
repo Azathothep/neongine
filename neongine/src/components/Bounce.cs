@@ -2,10 +2,8 @@ using System;
 using neon;
 
 namespace neongine {
-    public class Bounce : IComponent
+    public class Bounce : Component
     {
-        public EntityID EntityID { get; set; }
-
         [Serialize]
         public float Value = 1;
 
@@ -21,7 +19,7 @@ namespace neongine {
             Value = other.Value;
         }
 
-        public IComponent Clone() => new Bounce(this);
+        public override Component Clone() => new Bounce(this);
     }
 }
 

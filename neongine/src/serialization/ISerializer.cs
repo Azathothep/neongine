@@ -13,8 +13,8 @@ namespace neongine
 
         public SceneDefinition DeserializeScene(string serializedData);
 
-        public string SerializeComponent<T>(T component) where T : class, IComponent;
-        public IComponent DeserializeComponent(string serializedData, Type componentType);
+        public string SerializeComponent<T>(T component) where T : Component;
+        public Component DeserializeComponent(string serializedData, Type componentType);
 
         public string SerializeSystem<T>(T system) where T : IGameSystem;
         public IGameSystem DeserializeSystem(string serializedData, Type systemType);

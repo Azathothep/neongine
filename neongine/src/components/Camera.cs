@@ -3,11 +3,9 @@ using Microsoft.Xna.Framework;
 
 namespace neongine
 {
-    public class Camera : IComponent, IAwakable
+    public class Camera : Component, IAwakable
     {
         public static Camera Main;
-
-        public EntityID EntityID { get; private set; }
 
         private Point m_Point;
         
@@ -41,7 +39,7 @@ namespace neongine
             m_Point = Components.GetOwner(this).Get<Point>();
         }
 
-        public IComponent Clone() => new Camera(this);
+        public override Component Clone() => new Camera(this);
 
         public Vector2 WorldToScreen(Vector2 v) => ScreenOffset + new Vector2(v.X - m_Point.WorldPosition.X, - (v.Y - m_Point.WorldPosition.Y)) * Resolution * Zoom;
         public Vector2 WorldToScreen(float x, float y) => ScreenOffset + new Vector2((x - m_Point.WorldPosition.X) * Resolution * Zoom, - (y - m_Point.WorldPosition.Y) * Resolution * Zoom);

@@ -4,10 +4,8 @@ using neon;
 
 namespace neongine
 {
-    public class Point : IComponent, IAwakable
+    public class Point : Component, IAwakable
     {
-        public EntityID EntityID { get; private set; }
-
         public bool DirtyPosition => m_WorldPosition.IsDirty;
         public bool DirtyRotation => m_WorldRotation.IsDirty;
         public bool DirtyScale => m_WorldScale.IsDirty;
@@ -201,7 +199,7 @@ namespace neongine
             m_Children = Components.GetOwner(this).GetInChildren<Point>();
         }
 
-        public IComponent Clone()
+        public override Component Clone()
         {
             return new Point(this);
         }

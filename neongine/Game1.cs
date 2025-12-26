@@ -51,9 +51,9 @@ namespace neongine
 
             Neongine.LoadEditorSystems(_spriteBatch);
             
-            TestCameraScene();
+            // TestCameraScene();
 
-            // TestCollisionResolutionScene();
+            TestCollisionResolutionScene();
 
             // TestBallScenes();
 
@@ -93,7 +93,7 @@ namespace neongine
 
             EntityID entityID = Neongine.Entity();
             Point point = entityID.Get<Point>();
-            point.WorldPosition = new Vector3(-2, 0, 0);
+            point.WorldPosition = new Vector3(2, 0, 0);
             point.WorldRotation = 45.0f;
             Velocity entityVelocity = entityID.Add<Velocity>();
             entityID.Add(new Renderer(Assets.GetAsset<Texture2D>("ball")));
@@ -104,7 +104,7 @@ namespace neongine
             Point wallPoint = wallID.Get<Point>();
             Velocity wallVelocity = wallID.Add<Velocity>();
             wallPoint.WorldRotation = 37.0f;
-            wallPoint.WorldPosition = new Vector3(2, 0, 0);
+            wallPoint.WorldPosition = new Vector3(-2, 0, 0);
             wallID.Add(new Renderer(Assets.GetAsset<Texture2D>("ball")));
             wallID.Add(new Collider(new Shape([
                                                 new Vector2(0, 0.5f),
@@ -126,7 +126,7 @@ namespace neongine
             Systems.Add(new VelocitySystem());
             Systems.Add(new AngleVelocitySystem());
 
-            neon.Components.GetOwner(Camera.Main).Get<Point>().WorldPosition = new Vector3(2, 2, 0);
+            neon.Components.GetOwner(Camera.Main).Get<Point>().WorldPosition = new Vector3(0, 0, 0);
         }
 
         private void LoadScene() {

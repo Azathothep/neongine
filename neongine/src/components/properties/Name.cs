@@ -3,10 +3,8 @@ using Newtonsoft.Json;
 
 namespace neongine
 {
-    public class Name : IComponent
+    public class Name : Component
     {
-        public EntityID EntityID { get; private set; }
-
         [Serialize]
         private string m_Value;
 
@@ -21,7 +19,7 @@ namespace neongine
 
         public Name(Name other) : this(other.Value) { }
 
-        public IComponent Clone()
+        public override Component Clone()
         {
             return new Name(this);
         }

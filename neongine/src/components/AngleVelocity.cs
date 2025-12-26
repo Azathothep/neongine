@@ -7,10 +7,8 @@ using System.Threading.Tasks;
 
 namespace neongine
 {
-    public class AngleVelocity : IComponent
+    public class AngleVelocity : Component
     {
-        public EntityID EntityID { get ; private set ; }
-
         [Serialize]
         private float m_Value = 1.0f;
         public float Value {
@@ -27,7 +25,7 @@ namespace neongine
 
         public AngleVelocity(AngleVelocity other) : this(other.Value) { }
 
-        public IComponent Clone()
+        public override Component Clone()
         {
             return new AngleVelocity(this);
         }

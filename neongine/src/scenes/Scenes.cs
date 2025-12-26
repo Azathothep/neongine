@@ -76,7 +76,7 @@ namespace neongine
 
             foreach (var componentData in entityData.components)
 			{
-                IComponent component = BuildComponent(entityID, componentData);
+                Component component = BuildComponent(entityID, componentData);
 				sceneConstructor.SceneIDToEntityID.Add(componentData.id, component.EntityID);
 
                 RegisterDependencies(component, componentData.serializedData, sceneConstructor);
@@ -93,13 +93,13 @@ namespace neongine
             return entityID;
         }
 
-        private static IComponent BuildComponent(EntityID entityID, ComponentData componentData)
+        private static Component BuildComponent(EntityID entityID, ComponentData componentData)
         {
             Type componentType = Type.GetType(componentData.typeName);
 
-            IComponent component = Serializer.DeserializeComponent(componentData.serializedData, componentType);
+            Component component = Serializer.DeserializeComponent(componentData.serializedData, componentType);
 
-            IComponent newComponent = Components.Add(entityID, component, componentType);
+            Component newComponent = Components.Add(entityID, component, componentType);
 
             newComponent.EntityID.active = componentData.active;
 
@@ -166,9 +166,9 @@ namespace neongine
                 if (memberType == typeof(EntityID))
                 {
                     ResolveDependency(memberInfos[i], existingObject, entityID);
-                } else if (typeof(IComponent).IsAssignableFrom(memberType))
+                } else if (typeof(Component).IsAssignableFrom(memberType))
                 {
-                    IComponent componentToAssign = entityID.GetParent().GetComponentOfEntityID(entityID);
+                    Component componentToAssign = entityID.GetParent().GetComponentOfEntityID(entityID);
                     if (componentToAssign == null)
                     {
                         Debug.WriteLine($"Component not found");
@@ -197,14 +197,14 @@ namespace neongine
                 SerializeAttribute serializable = fieldInfo.GetCustomAttribute<SerializeAttribute>();
                 return serializable != null
                 && (fieldInfo.FieldType == typeof(EntityID)
-                || typeof(IComponent).IsAssignableFrom(fieldInfo.FieldType));
+                || typeof(Component).IsAssignableFrom(fieldInfo.FieldType));
             }).ToArray();
 
             MemberInfo[] propertyInfos = type.GetProperties(flags).Where(property =>
             {
                 return property.CanWrite && property.GetCustomAttribute<SerializeAttribute>() != null
                 && (property.PropertyType == typeof(EntityID)
-                || typeof(IComponent).IsAssignableFrom(property.PropertyType));
+                || typeof(Component).IsAssignableFrom(property.PropertyType));
             }).ToArray();
 
             return (fieldInfos.Concat(propertyInfos)).ToArray();
@@ -293,7 +293,7 @@ namespace neongine
 
         private static EntityData GetEntityData(EntityID entityID)
         {
-            IComponent[] components = entityID.GetAll(); // Get all components
+            Component[] components = entityID.GetAll(); // Get all components
 
             List<ComponentData> componentDatas = new List<ComponentData>(components.Length);
 
@@ -323,7 +323,7 @@ namespace neongine
             return entityData;
         }
 
-        private static ComponentData GetComponentData(IComponent component, Type type)
+        private static ComponentData GetComponentData(Component component, Type type)
         {
             ComponentData componentData = new ComponentData()
             {

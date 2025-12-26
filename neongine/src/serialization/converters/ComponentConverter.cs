@@ -24,7 +24,7 @@ namespace neongine
 
         public override bool CanConvert(Type objectType)
         {
-            return typeof(IComponent).IsAssignableFrom(objectType);
+            return typeof(Component).IsAssignableFrom(objectType);
         }
 
         public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)

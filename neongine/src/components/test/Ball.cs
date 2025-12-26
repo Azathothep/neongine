@@ -5,11 +5,9 @@ using neon;
 
 namespace neongine {
     [DoNotSerialize]
-    public class Ball : IComponent
+    public class Ball : Component
     {
-        public EntityID EntityID { get; private set; }
-
-        public IComponent Clone() => new Ball();
+        public override Component Clone() => new Ball();
     }
 }
 

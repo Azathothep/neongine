@@ -16,9 +16,9 @@ namespace neongine
 
         public static SceneDefinition DeserializeScene(string serializedData) => m_Serializer.DeserializeScene(serializedData);
 
-        public static string SerializeComponent<T>(T component) where T : class, IComponent => m_Serializer.SerializeComponent(component);
+        public static string SerializeComponent<T>(T component) where T : Component => m_Serializer.SerializeComponent(component);
 
-        public static IComponent DeserializeComponent(string serializedData, Type componentType) => m_Serializer.DeserializeComponent(serializedData, componentType);
+        public static Component DeserializeComponent(string serializedData, Type componentType) => m_Serializer.DeserializeComponent(serializedData, componentType);
 
         public static string SerializeSystem<T>(T system) where T : IGameSystem => m_Serializer.SerializeSystem(system);
 

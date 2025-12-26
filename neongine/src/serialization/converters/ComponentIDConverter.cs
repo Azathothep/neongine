@@ -10,7 +10,7 @@ namespace neongine
 	{
 		public override bool CanConvert(Type objectType)
 		{
-			return typeof(IComponent).IsAssignableFrom(objectType);
+			return typeof(Component).IsAssignableFrom(objectType);
 		}
 
 		public override bool CanRead => false;
@@ -28,7 +28,7 @@ namespace neongine
 		{
 			JObject o = new JObject();
 
-			IComponent component = (IComponent)value;
+			Component component = (Component)value;
 
 			o.Add(new JProperty(EntityIDConverter.IDKey, (UInt32)(component.EntityID)));
 

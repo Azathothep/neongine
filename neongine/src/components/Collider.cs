@@ -4,10 +4,8 @@ using neon;
 
 namespace neongine
 {
-    public class Collider : IComponent
+    public class Collider : Component
     {
-        public EntityID EntityID { get; set; }
-
         [Serialize]
         private Shape m_BaseShape;
         public Shape BaseShape => m_BaseShape;
@@ -69,6 +67,6 @@ namespace neongine
             return true;
         }
 
-        public IComponent Clone() => new Collider(this);
+        public override Component Clone() => new Collider(this);
     }
 }

@@ -75,7 +75,7 @@ namespace neongine
                 childCopy.SetParent(entityCopy);
             }
 
-            IComponent[] components = entity.GetAll();
+            Component[] components = entity.GetAll();
 
             foreach (var component in components) {
                 Components.Add(entity, component, component.GetType());

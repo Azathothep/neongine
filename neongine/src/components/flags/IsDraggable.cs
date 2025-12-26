@@ -6,11 +6,9 @@ using System.Threading.Tasks;
 
 namespace neon
 {
-    public class IsDraggable : IComponent
+    public class IsDraggable : Component
     {
-        public EntityID EntityID { get; set; }
-
-        public IComponent Clone()
+        public override Component Clone()
         {
             return new IsDraggable();
         }

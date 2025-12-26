@@ -2,10 +2,8 @@
 
 namespace neongine
 {
-    public class IsStatic : IComponent
+    public class IsStatic : Component
     {
-        public EntityID EntityID { get; private set; }
-
-        public IComponent Clone() => new IsStatic();
+        public override Component Clone() => new IsStatic();
     }
 }

@@ -35,7 +35,7 @@ namespace neongine
             }
         };
 
-        public string SerializeComponent<T>(T component) where T : class, IComponent
+        public string SerializeComponent<T>(T component) where T : Component
         {
             string jsonString = JsonConvert.SerializeObject(component, ComponentSerializerSettings);
 
@@ -44,9 +44,9 @@ namespace neongine
             return jsonString;
         }
 
-        public IComponent DeserializeComponent(string serializedData, Type type)
+        public Component DeserializeComponent(string serializedData, Type type)
         {
-            return (IComponent)JsonConvert.DeserializeObject(serializedData, type, ComponentSerializerSettings);
+            return (Component)JsonConvert.DeserializeObject(serializedData, type, ComponentSerializerSettings);
         }
 
         public string SerializeSystem<T>(T system) where T : IGameSystem

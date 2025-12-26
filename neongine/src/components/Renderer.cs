@@ -5,10 +5,8 @@ using Newtonsoft.Json;
 
 namespace neongine
 {
-	public class Renderer : IComponent
+	public class Renderer : Component
     {
-        public EntityID EntityID { get; private set; }
-
 		[Serialize]
         public Texture2D Texture { get; private set; }
 
@@ -30,6 +28,6 @@ namespace neongine
 
         }
 
-        public IComponent Clone() => new Renderer(this);
+        public override Component Clone() => new Renderer(this);
     }
 }
