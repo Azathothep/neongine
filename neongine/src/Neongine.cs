@@ -1,7 +1,7 @@
-﻿using Microsoft.Xna.Framework.Content;
+﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 using neon;
-using System.Collections.Generic;
 
 namespace neongine
 {
@@ -16,10 +16,13 @@ namespace neongine
             Serializer.SetSerializer(new NewtonsoftJsonSerializer());
         }
 
-        public static void LoadCommonSystems(SpriteBatch spriteBatch)
+        public static void LoadCommonSystems(GameWindow gameWindow, SpriteBatch spriteBatch)
         {
             EntityID cameraEntity = Neongine.Entity();
-            cameraEntity.Add<Camera>();
+
+            Vector2 screenDimensions = new Vector2(gameWindow.ClientBounds.Width, gameWindow.ClientBounds.Height);
+
+            cameraEntity.Add(new Camera(screenDimensions));
 
             Systems.Add(new RenderingSystem(spriteBatch));
         }
@@ -38,6 +41,7 @@ namespace neongine
         {
             Systems.Add(new DragSystem(spriteBatch, 8.0f));
             Systems.Add(new EditorSaveSystem());
+            Systems.Add(new GridSystem());
         }
 
         public static EntityID Entity(string name = null)

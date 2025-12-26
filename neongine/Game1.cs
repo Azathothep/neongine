@@ -29,6 +29,11 @@ namespace neongine
 
         protected override void Initialize()
         {
+            _graphics.IsFullScreen = false;
+            _graphics.PreferredBackBufferWidth = 800;
+            _graphics.PreferredBackBufferHeight = 480;
+            _graphics.ApplyChanges();
+
             Neongine.Initialize(Content);
 
             base.Initialize();
@@ -40,13 +45,15 @@ namespace neongine
 
             // m_SpriteFont = Content.Load<SpriteFont>("mainFont");
 
-            Neongine.LoadCommonSystems(_spriteBatch);
+            Neongine.LoadCommonSystems(Window, _spriteBatch);
 
             Neongine.LoadCollisionSystems(_spriteBatch);
 
             Neongine.LoadEditorSystems(_spriteBatch);
             
-            TestCollisionResolutionScene();
+            TestCameraScene();
+
+            // TestCollisionResolutionScene();
 
             // TestBallScenes();
 
@@ -64,11 +71,29 @@ namespace neongine
             Systems.Add(new BouncingBallSystem(bounds));
         }
 
+        private void TestCameraScene()
+        {
+            EntityID entityID = Neongine.Entity();
+            Point point = entityID.Get<Point>();
+            point.WorldPosition = new Vector3(1, 1, 0);
+            entityID.Add(new Renderer(Assets.GetAsset<Texture2D>("ball")));
+            
+            EntityID cameraEntity = neon.Components.GetOwner(Camera.Main);
+            Velocity cameraVelocity = cameraEntity.Add<Velocity>();
+
+            Camera.Main.Zoom = 1.0f;
+        
+            Systems.Add(new ManualVelocityControlSystem(cameraVelocity, 0.03f));
+            Systems.Add(new VelocitySystem());
+
+            Systems.Add(new CameraZoomControllerSystem(2.0f));
+        }
+
         private void TestCollisionResolutionScene() {
 
             EntityID entityID = Neongine.Entity();
             Point point = entityID.Get<Point>();
-            point.WorldPosition = new Vector3(5, 2, 0);
+            point.WorldPosition = new Vector3(-2, 0, 0);
             point.WorldRotation = 45.0f;
             Velocity entityVelocity = entityID.Add<Velocity>();
             entityID.Add(new Renderer(Assets.GetAsset<Texture2D>("ball")));
@@ -79,7 +104,7 @@ namespace neongine
             Point wallPoint = wallID.Get<Point>();
             Velocity wallVelocity = wallID.Add<Velocity>();
             wallPoint.WorldRotation = 37.0f;
-            wallPoint.WorldPosition = new Vector3(2, 2, 0);
+            wallPoint.WorldPosition = new Vector3(2, 0, 0);
             wallID.Add(new Renderer(Assets.GetAsset<Texture2D>("ball")));
             wallID.Add(new Collider(new Shape([
                                                 new Vector2(0, 0.5f),
@@ -100,6 +125,8 @@ namespace neongine
 
             Systems.Add(new VelocitySystem());
             Systems.Add(new AngleVelocitySystem());
+
+            neon.Components.GetOwner(Camera.Main).Get<Point>().WorldPosition = new Vector3(2, 2, 0);
         }
 
         private void LoadScene() {

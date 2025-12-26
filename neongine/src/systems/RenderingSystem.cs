@@ -49,7 +49,7 @@ namespace neongine
         private void Render(Renderer renderer, Vector2 position, float rotation, Vector2 scale)
         {
             m_SpriteBatch.Draw(renderer.Texture,
-                             position * Camera.Main.Zoom,
+                             position,
                              null,
                             renderer.Color,
                             rotation * (float)(Math.PI / 180f),
@@ -64,10 +64,21 @@ namespace neongine
             instance.m_SpriteBatch.Begin();
 
             MonoGame.Primitives2D.DrawCircle(instance.m_SpriteBatch,
-                Camera.Main.WorldToScreen(p) * Camera.Main.Zoom,
-                Camera.Main.WorldToScreen(radius) * Camera.Main.Zoom,
+                Camera.Main.WorldToScreen(p),
+                Camera.Main.WorldToScreen(radius),
                 16,
                 color);
+
+            instance.m_SpriteBatch.End();
+        }
+
+        public static void DrawLine(Vector2 start, Vector2 end, Color color)
+        {
+            instance.m_SpriteBatch.Begin();
+
+            Vector2 startPosition = Camera.Main.WorldToScreen(start);
+            Vector2 endPosition = Camera.Main.WorldToScreen(end);
+            MonoGame.Primitives2D.DrawLine(instance.m_SpriteBatch, startPosition, endPosition, color);
 
             instance.m_SpriteBatch.End();
         }
@@ -77,14 +88,14 @@ namespace neongine
             instance.m_SpriteBatch.Begin();
 
             for (int i = 0; i < vertices.Length - 1; i++) {
-                Vector2 startPosition = Camera.Main.WorldToScreen(p + vertices[i]) * Camera.Main.Zoom;
-                Vector2 endPosition = Camera.Main.WorldToScreen(p + vertices[i + 1]) * Camera.Main.Zoom;
+                Vector2 startPosition = Camera.Main.WorldToScreen(p + vertices[i]);
+                Vector2 endPosition = Camera.Main.WorldToScreen(p + vertices[i + 1]);
                 MonoGame.Primitives2D.DrawLine(instance.m_SpriteBatch, startPosition, endPosition, color);
             }
 
             {
-                Vector2 startPosition = Camera.Main.WorldToScreen(p + vertices[vertices.Length - 1]) * Camera.Main.Zoom;
-                Vector2 endPosition = Camera.Main.WorldToScreen(p + vertices[0]) * Camera.Main.Zoom;
+                Vector2 startPosition = Camera.Main.WorldToScreen(p + vertices[vertices.Length - 1]);
+                Vector2 endPosition = Camera.Main.WorldToScreen(p + vertices[0]);
                 MonoGame.Primitives2D.DrawLine(instance.m_SpriteBatch, startPosition, endPosition, color);
             }
 
@@ -96,10 +107,10 @@ namespace neongine
             instance.m_SpriteBatch.Begin();
 
             MonoGame.Primitives2D.DrawRectangle(instance.m_SpriteBatch,
-            new Rectangle((int)(Camera.Main.WorldToScreen(p.WorldPosition.X + bounds.X) * Camera.Main.Zoom),
-                        (int)(Camera.Main.WorldToScreen(p.WorldPosition.Y + bounds.Y) * Camera.Main.Zoom),
-                        (int)(Camera.Main.WorldToScreen(bounds.Width) * Camera.Main.Zoom),
-                        (int)(Camera.Main.WorldToScreen(bounds.Height) * Camera.Main.Zoom)),
+            new Rectangle((int)(Camera.Main.WorldToScreen(p.WorldPosition.X + bounds.X)),
+                        (int)(Camera.Main.WorldToScreen(p.WorldPosition.Y + bounds.Y)),
+                        (int)(Camera.Main.WorldToScreen(bounds.Width)),
+                        (int)(Camera.Main.WorldToScreen(bounds.Height))),
             0.0f,
             Color.Blue);
 

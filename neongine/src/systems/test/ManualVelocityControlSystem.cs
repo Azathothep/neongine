@@ -32,9 +32,9 @@ namespace neongine {
             }
 
             if (keyboardState.IsKeyDown(Keys.Z)) {
-                input.Y = -1;
-            } else if (keyboardState.IsKeyDown(Keys.S)) {
                 input.Y = 1;
+            } else if (keyboardState.IsKeyDown(Keys.S)) {
+                input.Y = -1;
             }
 
             if (input != Vector2.Zero) input.Normalize();
