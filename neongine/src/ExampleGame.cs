@@ -11,7 +11,12 @@ namespace neongine
         public int WindowWidth => 800;
         public int WindowHeight => 480;
 
-        public void Load()
+        public void EditorLoad()
+        {
+            
+        }
+        
+        public void GameLoad()
         {
             TestCollisionResolutionScene();
         }

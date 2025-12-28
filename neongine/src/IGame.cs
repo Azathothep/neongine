@@ -5,6 +5,7 @@ namespace neongine
         public int WindowWidth {get; }
         public int WindowHeight {get; }
 
-        public void Load();
+        public void EditorLoad();
+        public void GameLoad();
     }
 }

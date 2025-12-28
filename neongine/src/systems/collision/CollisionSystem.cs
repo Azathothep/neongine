@@ -3,6 +3,7 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using neon;
+using neongine.editor;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -20,8 +21,10 @@ namespace neongine
         public Collision Collision;
     }
 
-    public class CollisionSystem : IGameUpdateSystem, IGameDrawSystem
+    public class CollisionSystem : IGameUpdateSystem, IEditorDrawSystem
     {
+        public bool ActiveInPlayMode => false;
+
         private static CollisionSystem instance;
 
 #region definitions
@@ -226,7 +229,6 @@ namespace neongine
         public void Draw()
         {
 #if DRAW_COLLISIONS
-
             for (int i = 0; i < m_QueryResultArray.Length; i++) {
                 (EntityID id, Vector2 pos, Point p, Collider c, Shape s, Bounds b) = (      m_QueryResultArray.IDs[i],
                                                                                             m_QueryResultArray.Positions[i],

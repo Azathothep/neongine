@@ -44,9 +44,11 @@ namespace neongine
 
 #if !NEONGINE_BUILD
             Neongine.LoadEditorSystems(_spriteBatch);
+
+            m_Game.EditorLoad();
 #endif            
 
-            m_Game.Load();
+            m_Game.GameLoad();
         }
 
         protected override void Update(GameTime gameTime)
