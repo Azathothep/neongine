@@ -13,8 +13,6 @@ namespace neongine
         private GraphicsDeviceManager _graphics;
         private SpriteBatch _spriteBatch;
 
-        //private SpriteFont m_SpriteFont;
-
         public static string RootDirectory;
 
         public Game1()
@@ -49,11 +47,13 @@ namespace neongine
 
             Neongine.LoadCollisionSystems(_spriteBatch);
 
+#if !NEONGINE_BUILD
             Neongine.LoadEditorSystems(_spriteBatch);
-            
+#endif            
+
             //TestCameraScene();
 
-             TestCollisionResolutionScene();
+            TestCollisionResolutionScene();
 
             // TestBallScenes();
 
@@ -90,7 +90,7 @@ namespace neongine
             point.WorldPosition = new Vector3(2, 0, 0);
             point.WorldRotation = 45.0f;
             Velocity entityVelocity = entityID.Add<Velocity>();
-            entityVelocity.Value = new Vector2(-1.0f, 0.0f);
+            // entityVelocity.Value = new Vector2(-1.0f, 0.0f);
             entityID.Add(new Renderer(Assets.GetAsset<Texture2D>("ball")));
             //entityID.Add<IsDraggable>();
             entityID.Add(new Collider(new Geometry(GeometryType.Rectangle, 0.6f), 1.0f));
@@ -98,7 +98,7 @@ namespace neongine
             EntityID wallID = Neongine.Entity();
             Point wallPoint = wallID.Get<Point>();
             Velocity wallVelocity = wallID.Add<Velocity>();
-            wallVelocity.Value = new Vector2(1.0f, 0.0f);
+            // wallVelocity.Value = new Vector2(1.0f, 0.0f);
             wallPoint.WorldRotation = 37.0f;
             wallPoint.WorldPosition = new Vector3(-2, 0, 0);
             wallID.Add(new Renderer(Assets.GetAsset<Texture2D>("ball")));
@@ -116,8 +116,8 @@ namespace neongine
             // wallPoint2.WorldPosition = new Vector3(4, 2, 0);
             // wallID2.Add(new Collider(new Geometry(GeometryType.Rectangle, 0.8f)));
 
-            //Systems.Add(new ManualVelocityControlSystem(entityVelocity, 0.03f));
-            //Systems.Add(new ManualVelocityControlSystem(wallVelocity, -0.02f));
+            Systems.Add(new ManualVelocityControlSystem(entityVelocity, 0.3f));
+            Systems.Add(new ManualVelocityControlSystem(wallVelocity, -0.2f));
 
             Systems.Add(new VelocitySystem());
             Systems.Add(new AngleVelocitySystem());
@@ -192,6 +192,7 @@ namespace neongine
             // Depending on mode, set play mode
             // (think about preprocessor directives)
 
+#if !NEONGINE_BUILD
             if (EditorPlayModeSystem.IsPlayMode)
             {
                 neongine.Systems.Update(neongine.Systems.PlayModeSystems, gameTime.ElapsedGameTime);
@@ -199,7 +200,9 @@ namespace neongine
             {
                 neongine.Systems.Update(neongine.Systems.EditorSystems, gameTime.ElapsedGameTime);
             }
-
+#else
+            neongine.Systems.Update(neongine.Systems.GameSystems, gameTime.ElapsedGameTime);
+#endif
             base.Update(gameTime);
         }
 
@@ -207,6 +210,7 @@ namespace neongine
         {
             GraphicsDevice.Clear(Color.LightSlateGray);
 
+#if !NEONGINE_BUILD
             if (EditorPlayModeSystem.IsPlayMode)
             {
                 neongine.Systems.Draw(neongine.Systems.PlayModeSystems);
@@ -214,6 +218,9 @@ namespace neongine
             {
                 neongine.Systems.Draw(neongine.Systems.EditorSystems);
             }
+#else
+            neongine.Systems.Draw(neongine.Systems.GameSystems);
+#endif
 
             base.Draw(gameTime);
         }
