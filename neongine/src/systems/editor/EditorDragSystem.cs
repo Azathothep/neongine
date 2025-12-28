@@ -6,10 +6,12 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace neongine
+namespace neongine.editor
 {
-    public class DragSystem : IUpdateSystem, IDrawSystem
+    public class EditorDragSystem : IEditorUpdateSystem, IEditorDrawSystem
     {
+        public bool ActiveInPlayMode => false;
+
         private Query<Point> m_Query = new Query<Point>(new IQueryFilter[]
         {
             new QueryFilter<IsDraggable>(FilterTerm.Has)
@@ -31,7 +33,7 @@ namespace neongine
 
         private IEnumerable<(EntityID, Point)> m_QueryResult;
 
-        public DragSystem(SpriteBatch spriteBatch, float inputRadius)
+        public EditorDragSystem(SpriteBatch spriteBatch, float inputRadius)
         {
             m_SpriteBatch = spriteBatch;
             m_Radius = inputRadius;

@@ -11,9 +11,11 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Media;
 using neon;
 
-namespace neongine {
-    public class QuadtreeSpacePartitioner : ISpacePartitioner, IDrawSystem
+namespace neongine.editor {
+    public class QuadtreeSpacePartitioner : ISpacePartitioner, IEditorDrawSystem
     {
+        public bool ActiveInPlayMode => true;
+
         private class Quadtree : IEnumerable<(EntityID, EntityID)> {
             private class Leaf
             {

@@ -8,7 +8,7 @@ using System.Diagnostics;
 namespace neongine
 {
     [Serialize]
-    public class BallGenerationSystem : IUpdateSystem
+    public class BallGenerationSystem : IGameUpdateSystem
     {
         private bool m_KeyPressed = false;
         

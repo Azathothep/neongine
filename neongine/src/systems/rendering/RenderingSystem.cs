@@ -1,24 +1,26 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using System.Collections.Generic;
 using neon;
-using System.Diagnostics;
-using System.Linq;
 using System;
+using neongine.editor;
 
 namespace neongine
 {
-    public class RenderingSystem : IDrawSystem
+    public class RenderingSystem : IEditorDrawSystem, IGameDrawSystem
     {
+        public bool ActiveInPlayMode => true;
+
         private static RenderingSystem instance;
 
         private SpriteBatch m_SpriteBatch;
+        private SpriteFont m_BaseFont;
 
         private Query<Renderer, Point> m_Query = new();
 
-        public RenderingSystem(SpriteBatch spriteBatch)
+        public RenderingSystem(SpriteBatch spriteBatch, SpriteFont baseFont)
         {
             m_SpriteBatch = spriteBatch;
+            m_BaseFont = baseFont;
 
             if (RenderingSystem.instance == null)
                 RenderingSystem.instance = this;
@@ -113,6 +115,15 @@ namespace neongine
                         (int)(Camera.Main.WorldToScreen(bounds.Height))),
             0.0f,
             Color.Blue);
+
+            instance.m_SpriteBatch.End();
+        }
+
+        public static void DrawText(string text, Vector2 screenPosition, int size, Color color)
+        {
+            instance.m_SpriteBatch.Begin();
+
+            instance.m_SpriteBatch.DrawString(instance.m_BaseFont, text, screenPosition, color, 0, Vector2.Zero, size, SpriteEffects.None, 0.5f);
 
             instance.m_SpriteBatch.End();
         }

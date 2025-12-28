@@ -7,8 +7,8 @@ using System.Threading.Tasks;
 
 namespace neongine
 {
-    [Serialize][Order(OrderType.After, typeof(CollisionSystem))]
-    public class AngleVelocitySystem : IUpdateSystem
+    [Serialize, Order(OrderType.After, typeof(CollisionSystem))]
+    public class AngleVelocitySystem : IGameUpdateSystem
     {
         private Query<AngleVelocity, Point> m_Query;
 

@@ -32,9 +32,9 @@ namespace neongine
             // IGameSystem[] gameSystems = Systems.GetLoadedSystems();
         }
 
-        public static void Unload(RuntimeScene scene)
+        public static void Unload(RuntimeScene scene, bool onlySerializable = true)
         {
-            IGameSystem[] serializableSystems = GetSerializableSystems(scene.GameSystems);
+            ISystem[] serializableSystems = onlySerializable ? GetSerializableSystems(scene.GameSystems) : scene.GameSystems;
 
             foreach (var system in serializableSystems)
                 Systems.Remove(system);
@@ -51,7 +51,7 @@ namespace neongine
 
             scene.Roots = Entities.GetRoots();
 
-            scene.GameSystems = Systems.GetLoadedSystems();
+            scene.GameSystems = Systems.GetLoadedGameSystems();
 
             return scene;
         }
@@ -214,7 +214,7 @@ namespace neongine
         {
             foreach (var systemData in systemDatas)
             {
-                IGameSystem system = BuildSystem(systemData);
+                ISystem system = BuildSystem(systemData);
 
                 RegisterDependencies(system, systemData.serializedData, sceneConstructor);
 
@@ -222,7 +222,7 @@ namespace neongine
             }
         }
 
-        private static IGameSystem BuildSystem(SystemData systemData)
+        private static ISystem BuildSystem(SystemData systemData)
         {
             Type systemType = Type.GetType(systemData.typeName);
 
@@ -252,11 +252,11 @@ namespace neongine
             return sceneDefinition;
         }
 
-        private static SystemData[] GetSystemDatas(IGameSystem[] gameSystems)
+        private static SystemData[] GetSystemDatas(ISystem[] gameSystems)
         {
             List<SystemData> systemDatas = new List<SystemData>();
 
-            IGameSystem[] serializableSystems = GetSerializableSystems(gameSystems);
+            ISystem[] serializableSystems = GetSerializableSystems(gameSystems);
 
             foreach (var us in serializableSystems)
             {
@@ -274,9 +274,9 @@ namespace neongine
             return systemDatas.ToArray();
         }
 
-        private static IGameSystem[] GetSerializableSystems(IGameSystem[] gameSystems)
+        private static ISystem[] GetSerializableSystems(ISystem[] gameSystems)
         {
-            List<IGameSystem> serializableSystems = new();
+            List<ISystem> serializableSystems = new();
 
             foreach (var system in gameSystems)
             {
@@ -289,6 +289,11 @@ namespace neongine
             }
 
             return serializableSystems.ToArray();
+        }
+
+        public static bool IsEntitySerializable(EntityID entity)
+        {
+            return entity.GetType().GetCustomAttribute<DoNotSerializeAttribute>() == null;
         }
 
         private static EntityData GetEntityData(EntityID entityID)

@@ -5,10 +5,12 @@ using System;
 using System.Diagnostics;
 using System.IO;
 
-namespace neongine
+namespace neongine.editor
 {
-    public class EditorSaveSystem : IUpdateSystem
+    public class EditorSaveSystem : IEditorUpdateSystem
     {
+        public bool ActiveInPlayMode => true;
+        
         public static string SavePath = "scenes/MainScene.json";
 
         private ButtonState m_PreviousState_S;
@@ -51,7 +53,7 @@ namespace neongine
 
             if (loadPressed)
             {
-                Debug.WriteLine("Hot scene loading not implemented");
+                Debug.WriteLine("Hot scene loading not yet implemented");
             }
 
             m_PreviousState_S = GetButtonState(keyboardState, Keys.S);

@@ -20,7 +20,7 @@ namespace neongine
         public Collision Collision;
     }
 
-    public class CollisionSystem : IUpdateSystem, IDrawSystem
+    public class CollisionSystem : IGameUpdateSystem, IGameDrawSystem
     {
         private static CollisionSystem instance;
 

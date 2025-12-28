@@ -16,8 +16,8 @@ namespace neongine
         public string SerializeComponent<T>(T component) where T : Component;
         public Component DeserializeComponent(string serializedData, Type componentType);
 
-        public string SerializeSystem<T>(T system) where T : IGameSystem;
-        public IGameSystem DeserializeSystem(string serializedData, Type systemType);
+        public string SerializeSystem<T>(T system) where T : ISystem;
+        public ISystem DeserializeSystem(string serializedData, Type systemType);
 
         public string GetMemberValue(string serializedData, string memberName);
     }

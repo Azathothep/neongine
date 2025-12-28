@@ -6,7 +6,7 @@ using neon;
 
 namespace neongine {
     [Serialize]
-    public class BouncingBallSystem : IUpdateSystem
+    public class BouncingBallSystem : IGameUpdateSystem
     {
         private Query<Point, Velocity> m_Query = new Query<Point, Velocity>([
             new QueryFilter<Ball>(FilterTerm.Has)

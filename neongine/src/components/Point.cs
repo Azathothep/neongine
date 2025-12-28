@@ -196,7 +196,14 @@ namespace neongine
 
         private void UpdateChildren()
         {
-            m_Children = Components.GetOwner(this).GetInChildren<Point>();
+            EntityID owner = Components.GetOwner(this);
+            if (owner == null)
+            {
+                m_Children = new Point[0];
+                return;
+            }
+
+            m_Children = owner.GetInChildren<Point>();
         }
 
         public override Component Clone()

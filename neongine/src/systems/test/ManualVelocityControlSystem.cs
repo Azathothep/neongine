@@ -5,7 +5,7 @@ using neon;
 
 namespace neongine {
     [Serialize, AllowMultiple, Order(OrderType.Before, typeof(CollisionSystem)), Order(OrderType.Before, typeof(VelocitySystem))]
-    public class ManualVelocityControlSystem : IUpdateSystem
+    public class ManualVelocityControlSystem : IGameUpdateSystem
     {
         [Serialize]
         private Velocity m_Velocity;

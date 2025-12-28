@@ -49,14 +49,14 @@ namespace neongine
             return (Component)JsonConvert.DeserializeObject(serializedData, type, ComponentSerializerSettings);
         }
 
-        public string SerializeSystem<T>(T system) where T : IGameSystem
+        public string SerializeSystem<T>(T system) where T : ISystem
         {
             return JsonConvert.SerializeObject(system, SystemSerializerSettings);
         }
 
-        public IGameSystem DeserializeSystem(string serializedData, Type type)
+        public ISystem DeserializeSystem(string serializedData, Type type)
         {
-            return (IGameSystem)JsonConvert.DeserializeObject(serializedData, type, SystemSerializerSettings);
+            return (ISystem)JsonConvert.DeserializeObject(serializedData, type, SystemSerializerSettings);
         }
 
         public string SerializeScene(SceneDefinition sceneDefinition)

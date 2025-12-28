@@ -3,11 +3,13 @@ using System.Diagnostics;
 using Microsoft.Xna.Framework;
 using neon;
 
-namespace neongine
+namespace neongine.editor
 {
     [Order(OrderType.Before, typeof(RenderingSystem))]
-    public class GridSystem : IDrawSystem
+    public class EditorGridSystem : IEditorDrawSystem
     {
+        public bool ActiveInPlayMode => false;
+
         public void Draw()
         {
             Point point = neon.Components.GetOwner(Camera.Main).Get<Point>();

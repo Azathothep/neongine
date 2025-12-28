@@ -10,7 +10,7 @@ using Newtonsoft.Json;
 namespace neongine
 {
     [Serialize, AllowMultiple]
-    public class ScaleBumpSystem : IUpdateSystem
+    public class ScaleBumpSystem : IGameUpdateSystem
     {
         [Serialize]
         private float m_Speed;

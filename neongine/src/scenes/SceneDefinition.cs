@@ -5,7 +5,7 @@ namespace neongine
 {
     public struct RuntimeScene
     {
-        public IGameSystem[] GameSystems;
+        public ISystem[] GameSystems;
 
         public EntityID[] Roots;
     }

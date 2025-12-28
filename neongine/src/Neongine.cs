@@ -2,6 +2,7 @@
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 using neon;
+using neongine.editor;
 
 namespace neongine
 {
@@ -10,6 +11,8 @@ namespace neongine
         public static void Initialize(ContentManager contentManager)
         {
             Neon.Architecture architecture = Neon.Initialize();
+
+            neongine.Systems.Initialize();
 
             Assets.SetManager(contentManager);
 
@@ -24,7 +27,9 @@ namespace neongine
 
             cameraEntity.Add(new Camera(screenDimensions));
 
-            Systems.Add(new RenderingSystem(spriteBatch));
+            SpriteFont spriteFont = Assets.GetAsset<SpriteFont>("Arial");
+
+            Systems.Add(new RenderingSystem(spriteBatch, spriteFont));
         }
 
         public static void LoadCollisionSystems(SpriteBatch spriteBatch) {
@@ -39,9 +44,11 @@ namespace neongine
 
         public static void LoadEditorSystems(SpriteBatch spriteBatch)
         {
-            Systems.Add(new DragSystem(spriteBatch, 8.0f));
+            Systems.Add(new EditorDragSystem(spriteBatch, 8.0f));
             Systems.Add(new EditorSaveSystem());
-            Systems.Add(new GridSystem());
+            Systems.Add(new EditorGridSystem());
+            Systems.Add(new EditorCameraControllerSystem(2.0f, 2.0f));
+            Systems.Add(new EditorPlayModeSystem());
         }
 
         public static EntityID Entity(string name = null)
@@ -54,10 +61,6 @@ namespace neongine
             entityID.Add(new Name(name));
 
             return entityID;
-        }
-
-        public static void Start() {
-            EntityID[] entities = Entities.GetRoots();
         }
     }
 }
