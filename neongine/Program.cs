@@ -1,2 +1,2 @@
-using var game = new neongine.Game1();
-game.Run();
+// using var application = new neongine.NeongineApplication(new neongine.ExampleGame());
+// application.Run();

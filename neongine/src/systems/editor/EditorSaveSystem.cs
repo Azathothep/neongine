@@ -36,7 +36,7 @@ namespace neongine.editor
                 SceneDefinition sceneDefinition = Scenes.GetDefinition(runtimeScene);
                 string jsonString = Serializer.SerializeScene(sceneDefinition);
 
-                string savePath = "./" + Game1.RootDirectory + "/" + SavePath;
+                string savePath = "./" + NeongineApplication.RootDirectory + "/" + SavePath;
 
                 Debug.WriteLine("Saving to : " + savePath);
 

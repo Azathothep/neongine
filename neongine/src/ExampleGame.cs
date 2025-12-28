@@ -1,65 +1,19 @@
-﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using Microsoft.Xna.Framework.Input;
 using System.Diagnostics;
-using neon;
 using neongine.editor;
-using System.IO;
+using neon;
 
 namespace neongine
 {
-    public class Game1 : Game
+    public class ExampleGame : neongine.IGame
     {
-        private GraphicsDeviceManager _graphics;
-        private SpriteBatch _spriteBatch;
+        public int WindowWidth => 800;
+        public int WindowHeight => 480;
 
-        public static string RootDirectory;
-
-        public Game1()
+        public void Load()
         {
-            _graphics = new GraphicsDeviceManager(this);
-            Content.RootDirectory = "Content";
-            IsMouseVisible = true;
-            RootDirectory = Content.RootDirectory;
-
-            // Debugger.Launch();
-        }
-
-        protected override void Initialize()
-        {
-            _graphics.IsFullScreen = false;
-            _graphics.PreferredBackBufferWidth = 800;
-            _graphics.PreferredBackBufferHeight = 480;
-            _graphics.ApplyChanges();
-
-            Neongine.Initialize(Content);
-
-            base.Initialize();
-        }
-
-        protected override void LoadContent()
-        {
-			_spriteBatch = new SpriteBatch(GraphicsDevice);
-
-            // m_SpriteFont = Content.Load<SpriteFont>("mainFont");
-
-            Neongine.LoadCommonSystems(Window, _spriteBatch);
-
-            Neongine.LoadCollisionSystems(_spriteBatch);
-
-#if !NEONGINE_BUILD
-            Neongine.LoadEditorSystems(_spriteBatch);
-#endif            
-
-            //TestCameraScene();
-
             TestCollisionResolutionScene();
-
-            // TestBallScenes();
-
-            // LoadScene();
-
-            // InitializeContent();
         }
 
         private void TestBallScenes() {
@@ -126,14 +80,8 @@ namespace neongine
         }
 
         private void LoadScene() {
-            string scenePath = "./" + Content.RootDirectory + "/" + EditorSaveSystem.SavePath;
-            string jsonString = File.ReadAllText(scenePath);
-
-            Debug.WriteLine("Loading scene " + scenePath);
-
-            SceneDefinition sceneDefinition = Serializer.DeserializeScene(jsonString);
-            
-            Scenes.Load(sceneDefinition);
+            string scenePath = "./" + NeongineApplication.RootDirectory + "/" + neongine.editor.EditorSaveSystem.SavePath;
+            Scenes.Load(scenePath);
         }
 
         private void InitializeContent()
@@ -179,50 +127,6 @@ namespace neongine
             CollisionSystem.OnTriggerEnter(entityID_2, (col) => Debug.WriteLine($"entity 2 entering trigger !"));
             CollisionSystem.OnTriggerExit(entityID_2, (col) => Debug.WriteLine($"entity 2 exiting trigger !"));
         }
-
-        protected override void Update(GameTime gameTime)
-        {
-            // If unstarted entities : call IStartable
-
-            if (Keyboard.GetState().IsKeyDown(Keys.Escape))
-                Exit();
-
-            // TODO: Add your update logic here
-
-            // Depending on mode, set play mode
-            // (think about preprocessor directives)
-
-#if !NEONGINE_BUILD
-            if (EditorPlayModeSystem.IsPlayMode)
-            {
-                neongine.Systems.Update(neongine.Systems.PlayModeSystems, gameTime.ElapsedGameTime);
-            } else
-            {
-                neongine.Systems.Update(neongine.Systems.EditorSystems, gameTime.ElapsedGameTime);
-            }
-#else
-            neongine.Systems.Update(neongine.Systems.GameSystems, gameTime.ElapsedGameTime);
-#endif
-            base.Update(gameTime);
-        }
-
-        protected override void Draw(GameTime gameTime)
-        {
-            GraphicsDevice.Clear(Color.LightSlateGray);
-
-#if !NEONGINE_BUILD
-            if (EditorPlayModeSystem.IsPlayMode)
-            {
-                neongine.Systems.Draw(neongine.Systems.PlayModeSystems);
-            } else
-            {
-                neongine.Systems.Draw(neongine.Systems.EditorSystems);
-            }
-#else
-            neongine.Systems.Draw(neongine.Systems.GameSystems);
-#endif
-
-            base.Draw(gameTime);
-        }
     }
 }
+

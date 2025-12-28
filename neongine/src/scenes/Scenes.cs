@@ -18,6 +18,17 @@ namespace neongine
             public SceneConstructor() { }
         }
 
+        public static void Load(string scenePath)
+        {
+            string jsonString = System.IO.File.ReadAllText(scenePath);
+
+            Debug.WriteLine("Loading scene " + scenePath);
+
+            SceneDefinition sceneDefinition = Serializer.DeserializeScene(jsonString);
+
+            Load(sceneDefinition);
+        }
+
         public static void Load(SceneDefinition scene)
         {
             SceneConstructor sceneConstructor = new();
