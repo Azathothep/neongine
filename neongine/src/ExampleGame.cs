@@ -116,8 +116,8 @@ namespace neongine
             point2.WorldScale = Vector2.One;
             point3.LocalScale = Vector2.One * 0.5f;
 
-            entityID_1.Add<IsDraggable>();
-            entityID_2.Add<IsDraggable>();
+            entityID_1.Add<NotDraggable>();
+            entityID_2.Add<NotDraggable>();
 
             entityID_1.Add(new AngleVelocity(0.5f));
             entityID_2.Add(new AngleVelocity(0.5f));

@@ -242,7 +242,7 @@ namespace neongine
                 if (c.BaseShape.IsPolygon)
                     RenderingSystem.DrawPolygon(p.WorldPosition2D, s.Vertices, color);
                 else
-                    RenderingSystem.DrawCircle(p.WorldPosition2D, s.Radius, color);
+                    RenderingSystem.DrawCircle(p.WorldPosition2D, s.Radius, 8, color);
 
                 // RenderingSystem.DrawBounds(p, b);
             }

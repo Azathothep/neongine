@@ -12,10 +12,9 @@ namespace neongine.editor
     {
         public bool ActiveInPlayMode => false;
 
-        private Query<Point> m_Query = new Query<Point>(new IQueryFilter[]
-        {
-            new QueryFilter<IsDraggable>(FilterTerm.Has)
-        });
+        private Query<Point> m_Query = new Query<Point>( [
+            new QueryFilter<NotDraggable>(FilterTerm.HasNot)
+        ]);
 
         private float m_Radius = 4.0f;
 
@@ -29,13 +28,10 @@ namespace neongine.editor
 
         private ButtonState m_PreviousLeftButtonState;
 
-        private SpriteBatch m_SpriteBatch;
-
         private IEnumerable<(EntityID, Point)> m_QueryResult;
 
-        public EditorDragSystem(SpriteBatch spriteBatch, float inputRadius)
+        public EditorDragSystem(float inputRadius)
         {
-            m_SpriteBatch = spriteBatch;
             m_Radius = inputRadius;
         }
 
@@ -44,7 +40,7 @@ namespace neongine.editor
             m_QueryResult = QueryBuilder.Get(m_Query, QueryType.Cached, QueryResultMode.Unsafe);
 
             MouseState state = Mouse.GetState();
-            Vector2 mousePosition = new Vector2(state.Position.X, state.Position.Y);
+            Vector2 mousePosition = Camera.Main.ScreenToWorld(state.Position.X, state.Position.Y);
 
             bool leftButtonDown = m_PreviousLeftButtonState == ButtonState.Released && state.LeftButton == ButtonState.Pressed;
             bool leftButtonUp = m_PreviousLeftButtonState == ButtonState.Pressed && state.LeftButton == ButtonState.Released;
@@ -114,22 +110,17 @@ namespace neongine.editor
             DrawPoints(m_QueryResult);
         }
 
-        private void DrawPoints(IEnumerable<(EntityID, Point)> draggables)
+        private void DrawPoints(IEnumerable<(EntityID, Point)> entities)
         {
-            m_SpriteBatch.Begin();
-
-            foreach ((EntityID _, Point p) in draggables)
+            foreach ((EntityID _, Point p) in entities)
             {
-                MonoGame.Primitives2D.DrawCircle(m_SpriteBatch,
-                                        new Vector2(p.WorldPosition.X,
+                RenderingSystem.DrawCircle(new Vector2(p.WorldPosition.X,
                                         p.WorldPosition.Y),
                                         m_Radius,
-                                        8,
+                                        4,
                                         p == m_Hovered ? Color.Green : Color.Red,
-                                        8);
+                                        3.0f);
             }
-
-            m_SpriteBatch.End();
         }
     }
 }

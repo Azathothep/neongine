@@ -26,10 +26,14 @@ namespace neongine
             Vector2 screenDimensions = new Vector2(gameWindow.ClientBounds.Width, gameWindow.ClientBounds.Height);
 
             cameraEntity.Add(new Camera(screenDimensions));
+            cameraEntity.Add<NotDraggable>();
 
             SpriteFont spriteFont = Assets.GetAsset<SpriteFont>("Arial");
 
             Systems.Add(new RenderingSystem(spriteBatch, spriteFont));
+
+            Systems.Add(new VelocitySystem());
+            Systems.Add(new AngleVelocitySystem());
         }
 
         public static void LoadCollisionSystems(SpriteBatch spriteBatch) {
@@ -42,9 +46,9 @@ namespace neongine
                                             new VelocityCollisionResolver()));
         }
 
-        public static void LoadEditorSystems(SpriteBatch spriteBatch)
+        public static void LoadEditorSystems()
         {
-            Systems.Add(new EditorDragSystem(spriteBatch, 8.0f));
+            Systems.Add(new EditorDragSystem(0.05f));
             Systems.Add(new EditorSaveSystem());
             Systems.Add(new EditorGridSystem());
             Systems.Add(new EditorCameraControllerSystem(2.0f, 2.0f));

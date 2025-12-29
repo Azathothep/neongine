@@ -43,7 +43,7 @@ namespace neongine
             Neongine.LoadCollisionSystems(_spriteBatch);
 
 #if !NEONGINE_BUILD
-            Neongine.LoadEditorSystems(_spriteBatch);
+            Neongine.LoadEditorSystems();
 
             m_Game.EditorLoad();
 #endif            

@@ -43,6 +43,18 @@ namespace neongine
 
         public override Component Clone() => new Camera(this);
 
+        public Vector2 ScreenToWorld(Vector2 v)
+        {
+            Vector2 worldRelative = (v - ScreenOffset) / Resolution / Zoom;
+            return new Vector2(worldRelative.X + m_Point.WorldPosition.X, - (worldRelative.Y - m_Point.WorldPosition.Y));
+        }
+        public Vector2 ScreenToWorld(float x, float y)
+        {
+            x = (x - ScreenOffset.X) / Resolution / Zoom;
+            y = (y - ScreenOffset.Y) / Resolution / Zoom;
+            return new Vector2(x + m_Point.WorldPosition.X, - (y - m_Point.WorldPosition.Y));
+        }
+
         public Vector2 WorldToScreen(Vector2 v) => ScreenOffset + new Vector2(v.X - m_Point.WorldPosition.X, - (v.Y - m_Point.WorldPosition.Y)) * Resolution * Zoom;
         public Vector2 WorldToScreen(float x, float y) => ScreenOffset + new Vector2((x - m_Point.WorldPosition.X) * Resolution * Zoom, - (y - m_Point.WorldPosition.Y) * Resolution * Zoom);
         public float WorldToScreen(float f) => f * Resolution * Zoom;

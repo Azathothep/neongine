@@ -61,15 +61,16 @@ namespace neongine
                             0f);
         }
 
-        public static void DrawCircle(Vector2 p, float radius, Color color)
+        public static void DrawCircle(Vector2 p, float radius, int resolution, Color color, float thickness = 1.0f)
         {
             instance.m_SpriteBatch.Begin();
 
             MonoGame.Primitives2D.DrawCircle(instance.m_SpriteBatch,
                 Camera.Main.WorldToScreen(p),
                 Camera.Main.WorldToScreen(radius),
-                16,
-                color);
+                resolution,
+                color,
+                thickness);
 
             instance.m_SpriteBatch.End();
         }

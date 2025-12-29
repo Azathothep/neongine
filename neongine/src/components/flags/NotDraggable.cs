@@ -6,11 +6,11 @@ using System.Threading.Tasks;
 
 namespace neon
 {
-    public class IsDraggable : Component
+    public class NotDraggable : Component
     {
         public override Component Clone()
         {
-            return new IsDraggable();
+            return new NotDraggable();
         }
     }
 }
