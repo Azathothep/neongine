@@ -1,12 +1,7 @@
-﻿#define DRAW_COLLISIONS
-
-using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
+﻿using Microsoft.Xna.Framework;
 using neon;
-using neongine.editor;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 
 namespace neongine
@@ -21,7 +16,7 @@ namespace neongine
         public Collision Collision;
     }
 
-    public class CollisionSystem : IGameUpdateSystem, IEditorDrawSystem
+    public class CollisionSystem : IGameUpdateSystem
     {
         public bool ActiveInPlayMode => true;
 
@@ -174,6 +169,11 @@ namespace neongine
             return storage;
         }
 
+        public static bool IsColliding(EntityID id)
+        {
+            return instance.m_Storage.IsColliding.Contains(id);
+        }
+
         private void TriggerEvents(FrameDataStorage currentStorage) {            
             Collision collision;
 
@@ -224,29 +224,6 @@ namespace neongine
                         
             if (actions.TryGetValue(id2, out var actions2))
                 foreach (var action in actions2) action?.Invoke(id1, collision);
-        }
-
-        public void Draw()
-        {
-#if DRAW_COLLISIONS
-            for (int i = 0; i < m_QueryResultArray.Length; i++) {
-                (EntityID id, Vector2 pos, Point p, Collider c, Shape s, Bounds b) = (      m_QueryResultArray.IDs[i],
-                                                                                            m_QueryResultArray.Positions[i],
-                                                                                            m_QueryResultArray.Points[i],
-                                                                                            m_QueryResultArray.Colliders[i],
-                                                                                            m_QueryResultArray.Shapes[i],
-                                                                                            m_QueryResultArray.Bounds[i]);
-
-                Color color = m_Storage.IsColliding.Contains(id) ? Color.Red : Color.Yellow;
-
-                if (c.BaseShape.IsPolygon)
-                    RenderingSystem.DrawPolygon(p.WorldPosition2D, s.Vertices, color);
-                else
-                    RenderingSystem.DrawCircle(p.WorldPosition2D, s.Radius, 8, color);
-
-                RenderingSystem.DrawBounds(p.WorldPosition2D, b);
-            }
-#endif
         }
     }
 }

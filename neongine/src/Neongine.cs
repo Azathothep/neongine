@@ -44,6 +44,8 @@ namespace neongine
             Systems.Add(new CollisionSystem(qsp,
                                             new SATCollisionDetector(),
                                             new VelocityCollisionResolver()));
+
+            Systems.Add(new EditorColliderVisualizer());
         }
 
         public static void LoadEditorSystems()
