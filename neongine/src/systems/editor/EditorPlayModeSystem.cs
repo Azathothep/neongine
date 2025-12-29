@@ -43,8 +43,6 @@ namespace neongine.editor
                     Scenes.Unload(m_RuntimeScene);
                     Scenes.Load(m_SceneDefinition);
                     break;
-                default:
-                    break;
             }
 
             IsPlayMode = playMode;
