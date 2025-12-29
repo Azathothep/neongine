@@ -1,14 +1,7 @@
-#define DRAW_PARTITION
-
-using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Globalization;
-using System.Linq;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using Microsoft.Xna.Framework.Media;
 using neon;
 
 namespace neongine.editor {
@@ -32,16 +25,44 @@ namespace neongine.editor {
             private List<(EntityID, EntityID)> m_Enumerator;
 
             public Quadtree(Rect bounds) {
-                m_Base = new Leaf() {
+                m_Base = GetBaseLeaf(bounds);
+            }
+
+            private Leaf GetBaseLeaf(Rect bounds)
+            {
+                float smallestBound;
+                int squareQuantity;
+
+                if (bounds.Width == bounds.Height)
+                {
+                    squareQuantity = 1;
+                    smallestBound = bounds.Width != 0 ? bounds.Width : 1;
+                } else
+                {
+                    float biggestBound;
+                    if (bounds.Width < bounds.Height)
+                        (smallestBound, biggestBound) = (bounds.Width, bounds.Height);
+                    else
+                        (smallestBound, biggestBound) = (bounds.Height, bounds.Width);
+
+                    squareQuantity = (int)(biggestBound / smallestBound) + 1;
+                }
+
+                float squareSide = squareQuantity * smallestBound;
+
+                Leaf leaf = new Leaf()
+                {
                     Index = m_Index++,
-                    Bounds = bounds,
+                    Bounds = new Rect(bounds.X, bounds.Y, squareSide, squareSide),
                     Entities = new List<EntityID>(),
                     Children = null
                 };
+
+                return leaf;
             }
 
             public void Add(EntityID id, Vector2 position, Bounds bounds) {
-                Rect absoluteBounds = new Rect(bounds.X + position.X, bounds.Y + position.Y, bounds.Width, bounds.Height);
+                Rect absoluteBounds = new Rect(position.X + bounds.X, position.Y + bounds.Y, bounds.Width, bounds.Height);
                 
                 Leaf leaf;
                 if (GetBoundingLeaf(m_Base, id, absoluteBounds, out leaf) == false)
@@ -64,7 +85,6 @@ namespace neongine.editor {
 
                     boundingLeaf = leaf;
                     return true;
-
                 }
 
                 boundingLeaf = default(Leaf);
@@ -72,10 +92,10 @@ namespace neongine.editor {
             }
 
             private bool Contains(Rect parentBound, Rect childBound) {                
-                return (parentBound.X < childBound.X)
-                        && (parentBound.X + parentBound.Width > childBound.X + childBound.Width)
-                        && (parentBound.Y < childBound.Y)
-                        && (parentBound.Y + parentBound.Height > childBound.Y + childBound.Height);
+                return (parentBound.X <= childBound.X)
+                        && (parentBound.X + parentBound.Width >= childBound.X + childBound.Width)
+                        && (parentBound.Y <= childBound.Y)
+                        && (parentBound.Y - parentBound.Height <= childBound.Y - childBound.Height);
             }
 
             private Leaf[] CreateSubleaves(Rect parentBound) {
@@ -87,7 +107,7 @@ namespace neongine.editor {
                 for (int i = 0; i < 4; i++) {
                     leaves[i] = new Leaf() {
                         Index = m_Index++,
-                        Bounds = new Rect(parentBound.X + (width * (i % 2)), parentBound.Y + height * (int)(i / 2), width, height),
+                        Bounds = new Rect(parentBound.X + (width * (i % 2)), parentBound.Y - height * (int)(i / 2), width, height),
                         Entities = new List<EntityID>(),
                         Children = null
                     };
@@ -162,9 +182,10 @@ namespace neongine.editor {
 
             private void DrawLeaf(Leaf leaf, SpriteBatch spriteBatch) {
                 RenderingSystem.DrawRectangle(
-                    new Rectangle((int)leaf.Bounds.X, (int)leaf.Bounds.Y, (int)leaf.Bounds.Width, (int)leaf.Bounds.Height),
+                    new Vector2(leaf.Bounds.X, leaf.Bounds.Y),
+                    new Vector2(leaf.Bounds.Width, leaf.Bounds.Height),
                     0.0f,
-                    Color.Red);
+                    Color.LightGoldenrodYellow);
 
                 if (leaf.Children == null)
                     return;
@@ -194,7 +215,7 @@ namespace neongine.editor {
         }
 
         private Quadtree BuildTree(EntityID[] ids, Vector2[] positions, Bounds[] bounds) {
-            Quadtree tree = new Quadtree(new Rect(0, 0, 800, 500));
+            Quadtree tree = new Quadtree(GetTreeBounds(positions, bounds));
             
             for (int i = 0; i < ids.Length; i++) {
                 tree.Add(ids[i], positions[i], bounds[i]);
@@ -203,6 +224,33 @@ namespace neongine.editor {
             tree.BuildEnumerator();
 
             return tree;
+        }
+
+        private Rect GetTreeBounds(Vector2[] positions, Bounds[] bounds)
+        {
+            float xMin = 10000;
+            float yMin = 10000;
+            float xMax = -10000;
+            float yMax = -10000; 
+
+            for (int i = 0; i < positions.Length; i++)
+            {
+                float entityMinX = positions[i].X + bounds[i].X;
+                float entityMaxX = positions[i].X + bounds[i].X + bounds[i].Width;
+                float entityMinY = positions[i].Y + bounds[i].Y - bounds[i].Height;
+                float entityMaxY = positions[i].Y + bounds[i].Y;
+
+                if (entityMinX < xMin)
+                    xMin = entityMinX;
+                if (entityMaxX > xMax)
+                    xMax = entityMaxX;
+                if (entityMinY < yMin)
+                    yMin = entityMinY;
+                if (entityMaxY > yMax)
+                    yMax = entityMaxY;
+            }
+
+            return new Rect(xMin, yMax, xMax - xMin, yMax - yMin);
         }
 
         public void Draw() {

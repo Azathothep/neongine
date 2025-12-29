@@ -76,20 +76,6 @@ namespace neongine {
                     yMax = vertice.Y;                    
             }
 
-        //     this.X = xMin;
-        //     this.Y = yMin;
-        //     this.Width = xMax - xMin;
-        //     this.Height = yMax - yMin;
-        // }
-
-        // public static bool Crossing(Vector2 p1, Bounds b1, Vector2 p2, Bounds b2) {
-        //     (Vector2 lp, Bounds lb, Vector2 rp, Bounds rb) = p1.X + b1.X < p2.X + b2.X ? (p1, b1, p2, b2) : (p2, b2, p1, b1);
-        //     (Vector2 tp, Bounds tb, Vector2 bp, Bounds bb) = p1.Y + b1.Y < p2.Y + b2.Y ? (p1, b1, p2, b2) : (p2, b2, p1, b1);
-
-        //     return ((rp.X + rb.X) <= (lp.X + lb.Width / 2))
-        //     && ((bp.Y + bb.Y) <= (tp.Y + tb.Height / 2));
-        // }
-
             this.X = xMin;
             this.Y = yMax;
             this.Width = xMax - xMin;
