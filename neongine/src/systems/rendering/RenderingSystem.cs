@@ -86,6 +86,15 @@ namespace neongine
             instance.m_SpriteBatch.End();
         }
 
+        public static void DrawRectangle(Rectangle rectangle, float rotation, Color color)
+        {
+            instance.m_SpriteBatch.Begin();
+
+            MonoGame.Primitives2D.DrawRectangle(instance.m_SpriteBatch, rectangle, rotation, color);
+
+            instance.m_SpriteBatch.End();
+        }
+
         public static void DrawPolygon(Vector2 p, Vector2[] vertices, Color color)
         {
             instance.m_SpriteBatch.Begin();
@@ -109,7 +118,7 @@ namespace neongine
         {
             instance.m_SpriteBatch.Begin();
 
-            Vector2 screenPosition = Camera.Main.WorldToScreen(position.X + bounds.X, position.Y + bounds.Y + bounds.Height);
+            Vector2 screenPosition = Camera.Main.WorldToScreen(position.X + bounds.X, position.Y + bounds.Y);
 
             MonoGame.Primitives2D.DrawRectangle(instance.m_SpriteBatch,
             new Rectangle((int)screenPosition.X,

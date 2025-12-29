@@ -111,7 +111,7 @@ namespace neongine
         {
             IEnumerable<(EntityID, Point, Collider, Velocity, IsStatic)> queryResult = QueryBuilder.Get(m_Query, QueryType.Cached, QueryResultMode.Safe);
 
-            QueryResultSOA query = Convert(queryResult);
+            QueryResultSOA query = Convert(queryResult, (float)timeSpan.TotalSeconds);
 
             for (int i = 0; i < query.Length; i++) {
                 query.Colliders[i].UpdateShape(query.Rotations[i], query.Scales[i]);
@@ -132,7 +132,7 @@ namespace neongine
             m_QueryResultArray = query;
         }
 
-        private QueryResultSOA Convert(IEnumerable<(EntityID, Point, Collider, Velocity, IsStatic)> queryResult) {
+        private QueryResultSOA Convert(IEnumerable<(EntityID, Point, Collider, Velocity, IsStatic)> queryResult, float deltaTime) {
             int count = queryResult.Count();
 
             QueryResultSOA query = new QueryResultSOA(count);
@@ -140,7 +140,7 @@ namespace neongine
             int index = 0;
             foreach ((EntityID id, Point p, Collider c, Velocity v, IsStatic isStatic) in queryResult) {
                 query.IDs[index] = id;
-                query.Positions[index] = v == null ? p.WorldPosition2D : p.WorldPosition2D + v.Value;
+                query.Positions[index] = v == null ? p.WorldPosition2D : p.WorldPosition2D + v.Value * deltaTime;
                 query.Rotations[index] = p.WorldRotation;
                 query.Scales[index] = p.WorldScale;
                 query.Points[index] = p;

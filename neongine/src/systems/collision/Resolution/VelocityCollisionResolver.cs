@@ -65,7 +65,6 @@ namespace neongine {
             
             foreach (var correction in entityToCorrections) {
                 velocities[correction.Key].Value = correction.Value.Velocity;
-                System.Diagnostics.Debug.WriteLine("VelocityResolution: " + correction.Value.Velocity);
             }
         }
 

@@ -26,7 +26,7 @@ namespace neongine
 
             foreach ((EntityID _, AngleVelocity v, Point r) in qResult)
             {
-                r.WorldRotation += v.Value;
+                r.WorldRotation += v.Value * (float)timeSpan.TotalSeconds;
             }
         }
     }

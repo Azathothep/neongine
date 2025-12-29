@@ -1,4 +1,4 @@
-//#define DRAW_PARTITION
+#define DRAW_PARTITION
 
 using System;
 using System.Collections;
@@ -161,10 +161,10 @@ namespace neongine.editor {
             }
 
             private void DrawLeaf(Leaf leaf, SpriteBatch spriteBatch) {
-                MonoGame.Primitives2D.DrawRectangle(spriteBatch,
-                new Rectangle((int)leaf.Bounds.X, (int)leaf.Bounds.Y, (int)leaf.Bounds.Width, (int)leaf.Bounds.Height),
-                0.0f,
-                Color.Red);
+                RenderingSystem.DrawRectangle(
+                    new Rectangle((int)leaf.Bounds.X, (int)leaf.Bounds.Y, (int)leaf.Bounds.Width, (int)leaf.Bounds.Height),
+                    0.0f,
+                    Color.Red);
 
                 if (leaf.Children == null)
                     return;
@@ -207,14 +207,10 @@ namespace neongine.editor {
 
         public void Draw() {
 #if DRAW_PARTITION
-            m_SpriteBatch.Begin();
-
             if (m_Quadtree == null)
                 return;
 
             m_Quadtree.Draw(m_SpriteBatch);
-
-            m_SpriteBatch.End();
 #endif
         }
     }
