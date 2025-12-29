@@ -23,7 +23,7 @@ namespace neongine
 
     public class CollisionSystem : IGameUpdateSystem, IEditorDrawSystem
     {
-        public bool ActiveInPlayMode => false;
+        public bool ActiveInPlayMode => true;
 
         private static CollisionSystem instance;
 
@@ -244,7 +244,7 @@ namespace neongine
                 else
                     RenderingSystem.DrawCircle(p.WorldPosition2D, s.Radius, 8, color);
 
-                // RenderingSystem.DrawBounds(p, b);
+                RenderingSystem.DrawBounds(p.WorldPosition2D, b);
             }
 #endif
         }

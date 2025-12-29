@@ -56,7 +56,8 @@ namespace neongine
 
             EntityID wallID = Neongine.Entity();
             Point wallPoint = wallID.Get<Point>();
-            Velocity wallVelocity = wallID.Add<Velocity>();
+            wallID.Add<IsStatic>();
+            //Velocity wallVelocity = wallID.Add<Velocity>();
             // wallVelocity.Value = new Vector2(1.0f, 0.0f);
             wallPoint.WorldRotation = 37.0f;
             wallPoint.WorldPosition = new Vector3(-2, 0, 0);
@@ -70,18 +71,8 @@ namespace neongine
                                                 new Vector2(-0.3f, 0.3f)
                                             ]), 1.0f));
 
-            // EntityID wallID2 = Neongine.Entity();
-            // Point wallPoint2 = wallID2.Get<Point>();
-            // wallPoint2.WorldPosition = new Vector3(4, 2, 0);
-            // wallID2.Add(new Collider(new Geometry(GeometryType.Rectangle, 0.8f)));
-
-            Systems.Add(new ManualVelocityControlSystem(entityVelocity, 0.3f));
-            Systems.Add(new ManualVelocityControlSystem(wallVelocity, -0.2f));
-
-            Systems.Add(new VelocitySystem());
-            Systems.Add(new AngleVelocitySystem());
-
-            //neon.Components.GetOwner(Camera.Main).Get<Point>().WorldPosition = new Vector3(0, 0, 0);
+            Systems.Add(new ManualVelocityControlSystem(entityVelocity, 1.0f));
+            //Systems.Add(new ManualVelocityControlSystem(wallVelocity, -0.2f));
         }
 
         private void LoadScene() {

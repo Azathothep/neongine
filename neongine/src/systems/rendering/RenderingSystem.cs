@@ -105,15 +105,17 @@ namespace neongine
             instance.m_SpriteBatch.End();
         }
 
-        public static void DrawBounds(Point p, Bounds bounds)
+        public static void DrawBounds(Vector2 position, Bounds bounds)
         {
             instance.m_SpriteBatch.Begin();
 
+            Vector2 screenPosition = Camera.Main.WorldToScreen(position.X + bounds.X, position.Y + bounds.Y + bounds.Height);
+
             MonoGame.Primitives2D.DrawRectangle(instance.m_SpriteBatch,
-            new Rectangle((int)(Camera.Main.WorldToScreen(p.WorldPosition.X + bounds.X)),
-                        (int)(Camera.Main.WorldToScreen(p.WorldPosition.Y + bounds.Y)),
-                        (int)(Camera.Main.WorldToScreen(bounds.Width)),
-                        (int)(Camera.Main.WorldToScreen(bounds.Height))),
+            new Rectangle((int)screenPosition.X,
+                        (int)screenPosition.Y,
+                        (int)Camera.Main.WorldToScreen(bounds.Width),
+                        (int)Camera.Main.WorldToScreen(bounds.Height)),
             0.0f,
             Color.Blue);
 
