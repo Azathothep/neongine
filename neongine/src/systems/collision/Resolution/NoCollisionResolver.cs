@@ -9,6 +9,6 @@ namespace neongine
 {
     public class NoCollisionResolver : ICollisionResolver
     {
-        public void Resolve(CollisionData[] collisionDatas, EntityID[] entityIDs, Velocity[] velocities, bool[] isStatic) { }
+        public void Resolve(CollisionData[] collisionDatas, EntityID[] entityIDs, Velocity[] velocities, bool[] isStatic, float deltaTime) { }
     }
 }

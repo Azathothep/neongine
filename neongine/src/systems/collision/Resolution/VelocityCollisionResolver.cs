@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 using Microsoft.Xna.Framework;
@@ -52,23 +53,23 @@ namespace neongine {
             public bool HasPriorityAgainst(Correction other) => this.Length < other.Length;
         }
 
-        public void Resolve(CollisionData[] collisionDatas, EntityID[] entityIDs, Velocity[] velocities, bool[] isStatic)
+        public void Resolve(CollisionData[] collisionDatas, EntityID[] entityIDs, Velocity[] velocities, bool[] isStatic, float deltaTime)
         {
-            List<OneMovementData> oneMovementResolutions = new();
-            List<TwoMovementsData> twoMovementsResolutions = new();
+            List<OneMovementData> oneMovementResolutions;
+            List<TwoMovementsData> twoMovementsResolutions;
 
-            FillResolutionDatas(collisionDatas, entityIDs, velocities, isStatic, out oneMovementResolutions, out twoMovementsResolutions);
+            FillResolutionDatas(collisionDatas, entityIDs, velocities, isStatic, deltaTime, out oneMovementResolutions, out twoMovementsResolutions);
 
             Dictionary<int, List<(Solution, int)>> entityToSolutions = GetSolutions(oneMovementResolutions, twoMovementsResolutions);
 
             Dictionary<int, Correction> entityToCorrections = GetSingleCorrections(entityToSolutions);
             
             foreach (var correction in entityToCorrections) {
-                velocities[correction.Key].Value = correction.Value.Velocity;
+                velocities[correction.Key].Value = correction.Value.Velocity / deltaTime;
             }
         }
 
-        private void FillResolutionDatas(CollisionData[] collisionDatas, EntityID[] entityIDs, Velocity[] velocities, bool[] isStatic, out List<OneMovementData> oneMovementResolutions, out List<TwoMovementsData> twoMovementsResolutions) {
+        private void FillResolutionDatas(CollisionData[] collisionDatas, EntityID[] entityIDs, Velocity[] velocities, bool[] isStatic, float deltaTime, out List<OneMovementData> oneMovementResolutions, out List<TwoMovementsData> twoMovementsResolutions) {
             oneMovementResolutions = new();
             twoMovementsResolutions = new();
 
@@ -81,15 +82,15 @@ namespace neongine {
                 
                 if (movingEntity1 && movingEntity2)
                     twoMovementsResolutions.Add(
-                        new TwoMovementsData(collisionDatas[i].Collision, id1, velocities[id1].Value, id2, velocities[id2].Value)
+                        new TwoMovementsData(collisionDatas[i].Collision, id1, velocities[id1].Value * deltaTime, id2, velocities[id2].Value * deltaTime)
                     );
                 else if (movingEntity1)
                     oneMovementResolutions.Add(
-                        new OneMovementData(collisionDatas[i].Collision, id1, velocities[id1].Value)
+                        new OneMovementData(collisionDatas[i].Collision, id1, velocities[id1].Value * deltaTime)
                     );
                 else if (movingEntity2)
                     oneMovementResolutions.Add(
-                        new OneMovementData(collisionDatas[i].Collision, id2, velocities[id2].Value)
+                        new OneMovementData(collisionDatas[i].Collision, id2, velocities[id2].Value * deltaTime)
                     );
             }
         }

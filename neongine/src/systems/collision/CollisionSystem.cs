@@ -121,7 +121,7 @@ namespace neongine
 
             CollisionDetectionData detectionData = m_CollisionDetector.Detect(partition, query.IDs, query.Positions, query.Colliders, query.Shapes, query.Bounds);
 
-            m_CollisionResolver.Resolve(detectionData.Collisions, query.IDs, query.Velocities, query.IsStatic);
+            m_CollisionResolver.Resolve(detectionData.Collisions, query.IDs, query.Velocities, query.IsStatic, (float)timeSpan.TotalSeconds);
 
             FrameDataStorage currentStorage = Convert(detectionData);
 

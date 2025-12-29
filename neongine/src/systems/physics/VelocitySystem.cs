@@ -28,7 +28,6 @@ namespace neongine
                 Velocity v = r.Item3;
 
                 p.WorldPosition = p.WorldPosition + new Vector3(v.Value.X, v.Value.Y, 0) * (float)timeSpan.TotalSeconds;
-                //System.Diagnostics.Debug.WriteLine("VelocitySystem: " + v.Value);
             }
         }
     }
