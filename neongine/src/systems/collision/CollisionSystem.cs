@@ -52,9 +52,10 @@ namespace neongine
         }
 
         private struct FrameDataStorage {
-            public HashSet<EntityID> IsColliding = new();
             public Dictionary<(EntityID, EntityID), Collision> CollisionPairs = new();
+            public Dictionary<EntityID, List<(EntityID, Collision)>> EntityToCollisions = new();
             public HashSet<(EntityID, EntityID)> TriggerPairs = new();
+            public Dictionary<EntityID, List<EntityID>> EntityToTriggers = new();
 
             public FrameDataStorage() { }
         }
@@ -70,7 +71,6 @@ namespace neongine
         private ICollisionDetector m_CollisionDetector;
         private ICollisionResolver m_CollisionResolver;
         private FrameDataStorage m_Storage = new();
-        private QueryResultSOA m_QueryResultArray = new();
 
 #region events
         private Dictionary<EntityID, List<Action<EntityID, Collision>>> m_OnColliderEnter = new();
@@ -123,8 +123,6 @@ namespace neongine
             TriggerEvents(currentStorage);
 
             m_Storage = currentStorage;
-
-            m_QueryResultArray = query;
         }
 
         private QueryResultSOA Convert(IEnumerable<(EntityID, Point, Collider, Velocity, IsStatic)> queryResult, float deltaTime) {
@@ -155,15 +153,43 @@ namespace neongine
             FrameDataStorage storage = new FrameDataStorage();
 
             for (int i = 0; i < detectionDatas.Collisions.Length; i++) {
-                storage.CollisionPairs.Add(detectionDatas.Collisions[i].Entities, detectionDatas.Collisions[i].Collision);
-                storage.IsColliding.Add(detectionDatas.Collisions[i].Entities.Item1);
-                storage.IsColliding.Add(detectionDatas.Collisions[i].Entities.Item2);
+                EntityID entity1 = detectionDatas.Collisions[i].Entities.Item1;
+                EntityID entity2 = detectionDatas.Collisions[i].Entities.Item2;
+                Collision collision = detectionDatas.Collisions[i].Collision;
+
+                storage.CollisionPairs.Add((entity1, entity2), collision);
+    
+                if (!storage.EntityToCollisions.TryGetValue(entity1, out List<(EntityID, Collision)> value1)) {
+                    value1 = new List<(EntityID, Collision)>();
+                    storage.EntityToCollisions.Add(entity1, value1);
+                }
+
+                if (!storage.EntityToCollisions.TryGetValue(entity2, out List<(EntityID, Collision)> value2)) {
+                    value2 = new List<(EntityID, Collision)>();
+                    storage.EntityToCollisions.Add(entity2, value2);
+                }
+
+                value1.Add((entity2, collision));
+                value2.Add((entity1, collision));
             }
 
             for (int i = 0; i < detectionDatas.Triggers.Length; i++) {
+                (EntityID entity1, EntityID entity2) = detectionDatas.Triggers[i];
+
                 storage.TriggerPairs.Add(detectionDatas.Triggers[i]);
-                storage.IsColliding.Add(detectionDatas.Triggers[i].Item1);
-                storage.IsColliding.Add(detectionDatas.Triggers[i].Item2);
+
+                if (!storage.EntityToTriggers.TryGetValue(entity1, out List<EntityID> value1)) {
+                    value1 = new List<EntityID>();
+                    storage.EntityToTriggers.Add(entity1, value1);
+                }
+
+                if (!storage.EntityToTriggers.TryGetValue(entity2, out List<EntityID> value2)) {
+                    value2 = new List<EntityID>();
+                    storage.EntityToTriggers.Add(entity2, value2);
+                }
+
+                value1.Add(entity2);
+                value2.Add(entity1);
             }
 
             return storage;
@@ -171,7 +197,21 @@ namespace neongine
 
         public static bool IsColliding(EntityID id)
         {
-            return instance.m_Storage.IsColliding.Contains(id);
+            return instance.m_Storage.EntityToCollisions.ContainsKey(id) || instance.m_Storage.EntityToTriggers.ContainsKey(id);
+        }
+
+        public static List<(EntityID, Collision)> GetCollisions(EntityID id)
+        {
+            if (instance.m_Storage.EntityToCollisions.TryGetValue(id, out var value))
+                return value;
+            return null;
+        }
+
+        public static List<EntityID> GetTriggers(EntityID id)
+        {
+            if (instance.m_Storage.EntityToTriggers.TryGetValue(id, out var value))
+                return value;
+            return null;
         }
 
         private void TriggerEvents(FrameDataStorage currentStorage) {            

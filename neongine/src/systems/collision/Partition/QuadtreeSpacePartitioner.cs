@@ -207,7 +207,7 @@ namespace neongine.editor {
         {
             Quadtree tree = BuildTree(ids, positions, bounds);
 
-            tree.PrintEntities();
+            // tree.PrintEntities();
 
             m_Quadtree = tree;
 

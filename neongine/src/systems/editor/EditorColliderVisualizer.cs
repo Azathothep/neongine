@@ -35,7 +35,7 @@ namespace neongine.editor
                 else
                     RenderingSystem.DrawCircle(p.WorldPosition2D, c.Shape.Radius, 8, color);
 
-                // RenderingSystem.DrawBounds(p.WorldPosition2D, b);
+                //RenderingSystem.DrawBounds(p.WorldPosition2D, c.Bound);
             }
         }
     }

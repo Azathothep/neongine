@@ -275,7 +275,7 @@ namespace neongine
 
                 SystemData systemData = new SystemData()
                 {
-                    typeName = systemType.FullName,
+                    typeName = systemType.AssemblyQualifiedName,
                     serializedData = Serializer.SerializeSystem(us)
                 };
 
@@ -345,7 +345,7 @@ namespace neongine
             {
                 id = (uint)component.EntityID,
                 active = component.EntityID.active,
-                typeName = type.FullName,
+                typeName = type.AssemblyQualifiedName,
                 serializedData = Serializer.SerializeComponent(component)
             };
 

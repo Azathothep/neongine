@@ -54,7 +54,7 @@ namespace neongine {
 
         private void BuildCircleBounds(float radius) {
             this.X = -radius;
-            this.Y = -radius;
+            this.Y = radius;
             this.Width = radius * 2;
             this.Height = radius * 2;
         }
