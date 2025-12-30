@@ -140,7 +140,9 @@ namespace neongine
             instance.m_SpriteBatch.End();
         }
 
-        public static void DrawText(string text, Vector2 screenPosition, int size, Color color)
+        public static void DrawText(string text, Vector2 screenPosition, int size, Color color) => DrawText(instance.m_BaseFont, text, screenPosition, size, color);
+
+        public static void DrawText(SpriteFont font, string text, Vector2 screenPosition, int size, Color color)
         {
             instance.m_SpriteBatch.Begin();
 
