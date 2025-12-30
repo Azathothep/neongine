@@ -68,6 +68,9 @@ namespace neongine
                 || drawSystem is IEditorDrawSystem editorSystem && editorSystem.ActiveInPlayMode)
                     PlayModeSystems.Draw.Add(drawSystem);
             }
+
+            if (system is IStartable startable)
+                startable.OnStart();
         }
 
         public static void Remove(ISystem system)
@@ -97,6 +100,9 @@ namespace neongine
 
                 PlayModeSystems.Draw.Remove(drawSystem);
             }
+
+            if (system is IStoppable stoppable)
+                stoppable.OnStop();
         }
 
         public static ISystem[] GetLoadedGameSystems()
