@@ -12,7 +12,7 @@ namespace neongine.editor
     {
         public bool ActiveInPlayMode => false;
 
-        private Query<Point> m_Query = new Query<Point>( [
+        private Query<Transform> m_Query = new Query<Transform>( [
             new QueryFilter<NotDraggable>(FilterTerm.HasNot)
         ]);
 
@@ -20,15 +20,15 @@ namespace neongine.editor
 
         private float m_RotationAmount = 90.0f;
 
-        private Point m_Hovered = null;
+        private Transform m_Hovered = null;
 
-        private Point m_Dragged = null;
+        private Transform m_Dragged = null;
 
         private Vector3 m_Offset;
 
         private ButtonState m_PreviousLeftButtonState;
 
-        private IEnumerable<(EntityID, Point)> m_QueryResult;
+        private IEnumerable<(EntityID, Transform)> m_QueryResult;
 
         public EditorDragSystem(float inputRadius)
         {
@@ -85,24 +85,24 @@ namespace neongine.editor
             }
         }
 
-        private Point GetClosestPoint(IEnumerable<(EntityID, Point)> draggables, Vector2 mousePosition)
+        private Transform GetClosestPoint(IEnumerable<(EntityID, Transform)> draggables, Vector2 mousePosition)
         {
             float closestEntityDistance = m_Radius * m_Radius;
-            Point closestPoint = null;
+            Transform closestTransform = null;
 
-            foreach ((EntityID eid, Point p) in draggables)
+            foreach ((EntityID eid, Transform t) in draggables)
             {
-                Vector2 point2D = new Vector2(p.WorldPosition.X, p.WorldPosition.Y);
+                Vector2 point2D = new Vector2(t.WorldPosition.X, t.WorldPosition.Y);
                 float distanceToEntity = (mousePosition - point2D).LengthSquared();
 
                 if (distanceToEntity < closestEntityDistance)
                 {
                     closestEntityDistance = distanceToEntity;
-                    closestPoint = p;
+                    closestTransform = t;
                 }
             }
 
-            return closestPoint;
+            return closestTransform;
         }
 
         public void Draw()
@@ -110,15 +110,15 @@ namespace neongine.editor
             DrawPoints(m_QueryResult);
         }
 
-        private void DrawPoints(IEnumerable<(EntityID, Point)> entities)
+        private void DrawPoints(IEnumerable<(EntityID, Transform)> entities)
         {
-            foreach ((EntityID _, Point p) in entities)
+            foreach ((EntityID _, Transform t) in entities)
             {
-                RenderingSystem.DrawCircle(new Vector2(p.WorldPosition.X,
-                                        p.WorldPosition.Y),
+                RenderingSystem.DrawCircle(new Vector2(t.WorldPosition.X,
+                                        t.WorldPosition.Y),
                                         m_Radius,
                                         4,
-                                        p == m_Hovered ? Color.Green : Color.Red,
+                                        t == m_Hovered ? Color.Green : Color.Red,
                                         3.0f);
             }
         }

@@ -63,7 +63,7 @@ namespace neongine
 
             name = name == null ? "new_entity" : name;
 
-            entityID.Add<Point>();
+            entityID.Add<Transform>();
             entityID.Add(new Name(name));
 
             return entityID;

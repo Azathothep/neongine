@@ -8,7 +8,7 @@ namespace neongine {
     [Serialize]
     public class BouncingBallSystem : IGameUpdateSystem
     {
-        private Query<Point, Velocity> m_Query = new Query<Point, Velocity>([
+        private Query<Transform, Velocity> m_Query = new Query<Transform, Velocity>([
             new QueryFilter<Ball>(FilterTerm.Has)
         ]);
 
@@ -21,13 +21,13 @@ namespace neongine {
 
         public void Update(TimeSpan timeSpan)
         {
-            IEnumerable<(EntityID, Point, Velocity)> queryResult = QueryBuilder.Get(m_Query, QueryType.Cached, QueryResultMode.Unsafe);
+            IEnumerable<(EntityID, Transform, Velocity)> queryResult = QueryBuilder.Get(m_Query, QueryType.Cached, QueryResultMode.Unsafe);
         
-            foreach ((EntityID _, Point p, Velocity v) in queryResult) {
-                if (p.WorldPosition.X < m_Bounds.X || p.WorldPosition.X > m_Bounds.X + m_Bounds.Width)
+            foreach ((EntityID _, Transform t, Velocity v) in queryResult) {
+                if (t.WorldPosition.X < m_Bounds.X || t.WorldPosition.X > m_Bounds.X + m_Bounds.Width)
                     v.Value.X = -v.Value.X;
 
-                if (p.WorldPosition.Y < m_Bounds.Y || p.WorldPosition.Y > m_Bounds.Y + m_Bounds.Height)
+                if (t.WorldPosition.Y < m_Bounds.Y || t.WorldPosition.Y > m_Bounds.Y + m_Bounds.Height)
                     v.Value.Y = -v.Value.Y;
             }
         }

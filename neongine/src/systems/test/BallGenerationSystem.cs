@@ -39,9 +39,9 @@ namespace neongine
         private void GenerateEntity()
         {
             EntityID entity = Neongine.Entity();
-            Point point = entity.Get<Point>();
-            point.WorldPosition = GetRandomPosition();
-            point.WorldScale = Vector2.One * 0.5f;
+            Transform transform = entity.Get<Transform>();
+            transform.WorldPosition = GetRandomPosition();
+            transform.WorldScale = Vector2.One * 0.5f;
 
             entity.Add<Ball>();
             entity.Add(new Renderer(m_Texture));

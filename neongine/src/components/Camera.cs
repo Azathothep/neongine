@@ -7,8 +7,8 @@ namespace neongine
     {
         public static Camera Main;
 
-        public Point Point => m_Point;
-        private Point m_Point;
+        public Transform Transform => m_Transform;
+        private Transform m_Transform;
         
         [Serialize] public int Resolution = 100;
         [Serialize] public float Zoom = 1.0f;
@@ -38,7 +38,7 @@ namespace neongine
 
         public void Awake()
         {
-            m_Point = Components.GetOwner(this).Get<Point>();
+            m_Transform = Components.GetOwner(this).Get<Transform>();
         }
 
         public override Component Clone() => new Camera(this);
@@ -46,17 +46,17 @@ namespace neongine
         public Vector2 ScreenToWorld(Vector2 v)
         {
             Vector2 worldRelative = (v - ScreenOffset) / Resolution / Zoom;
-            return new Vector2(worldRelative.X + m_Point.WorldPosition.X, - (worldRelative.Y - m_Point.WorldPosition.Y));
+            return new Vector2(worldRelative.X + m_Transform.WorldPosition.X, - (worldRelative.Y - m_Transform.WorldPosition.Y));
         }
         public Vector2 ScreenToWorld(float x, float y)
         {
             x = (x - ScreenOffset.X) / Resolution / Zoom;
             y = (y - ScreenOffset.Y) / Resolution / Zoom;
-            return new Vector2(x + m_Point.WorldPosition.X, - (y - m_Point.WorldPosition.Y));
+            return new Vector2(x + m_Transform.WorldPosition.X, - (y - m_Transform.WorldPosition.Y));
         }
 
-        public Vector2 WorldToScreen(Vector2 v) => ScreenOffset + new Vector2(v.X - m_Point.WorldPosition.X, - (v.Y - m_Point.WorldPosition.Y)) * Resolution * Zoom;
-        public Vector2 WorldToScreen(float x, float y) => ScreenOffset + new Vector2((x - m_Point.WorldPosition.X) * Resolution * Zoom, - (y - m_Point.WorldPosition.Y) * Resolution * Zoom);
+        public Vector2 WorldToScreen(Vector2 v) => ScreenOffset + new Vector2(v.X - m_Transform.WorldPosition.X, - (v.Y - m_Transform.WorldPosition.Y)) * Resolution * Zoom;
+        public Vector2 WorldToScreen(float x, float y) => ScreenOffset + new Vector2((x - m_Transform.WorldPosition.X) * Resolution * Zoom, - (y - m_Transform.WorldPosition.Y) * Resolution * Zoom);
         public float WorldToScreen(float f) => f * Resolution * Zoom;
     }
 }

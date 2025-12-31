@@ -16,7 +16,7 @@ namespace neongine
         private float m_Speed;
 
         [Serialize]
-        private Point m_Scale;
+        private Transform m_Transform;
 
         private Vector2 m_StartScale = Vector2.One;
 
@@ -25,10 +25,10 @@ namespace neongine
         [JsonConstructor]
         private ScaleBumpSystem() { }
 
-        public ScaleBumpSystem(Point scale, float speed)
+        public ScaleBumpSystem(Transform transform, float speed)
         {
             m_Speed = speed;
-            m_Scale = scale;
+            m_Transform = transform;
             m_StartScale = Vector2.One; // To change back
         }
 
@@ -38,7 +38,7 @@ namespace neongine
             if (m_Timer >= 1.0f || m_Timer <= -1.0f)
                 m_Speed = -m_Speed;
 
-            m_Scale.LocalScale = m_StartScale + Vector2.One * m_Timer;
+            m_Transform.LocalScale = m_StartScale + Vector2.One * m_Timer;
         }
     }
 }

@@ -46,7 +46,7 @@ namespace neongine.editor
             if (input != Vector2.Zero) input.Normalize();
 
             Vector2 translation = input * m_MoveSpeed * (float)timeSpan.TotalSeconds;
-            Camera.Main.Point.WorldPosition += new Vector3(translation.X, translation.Y, 0);
+            Camera.Main.Transform.WorldPosition += new Vector3(translation.X, translation.Y, 0);
         }
     }
 }

@@ -29,7 +29,7 @@ namespace neongine
             public Vector2[] Positions;
             public float[] Rotations;
             public Vector2[] Scales;
-            public Point[] Points;
+            public Transform[] Transforms;
             public Velocity[] Velocities;
             public Collider[] Colliders;
             public Shape[] Shapes;
@@ -42,7 +42,7 @@ namespace neongine
                 Positions = new Vector2[count];
                 Rotations = new float[count];
                 Scales = new Vector2[count];
-                Points = new Point[count];
+                Transforms = new Transform[count];
                 Velocities = new Velocity[count];
                 Colliders = new Collider[count];
                 Shapes = new Shape[count];
@@ -61,7 +61,7 @@ namespace neongine
         }
 #endregion
 
-        private Query<Point, Collider, Velocity, IsStatic> m_Query = new(
+        private Query<Transform, Collider, Velocity, IsStatic> m_Query = new(
             [
                 new QueryFilter<Velocity>(FilterTerm.MightHave),
                 new QueryFilter<IsStatic>(FilterTerm.MightHave)
@@ -104,7 +104,7 @@ namespace neongine
 
         public void Update(TimeSpan timeSpan)
         {
-            IEnumerable<(EntityID, Point, Collider, Velocity, IsStatic)> queryResult = QueryBuilder.Get(m_Query, QueryType.Cached, QueryResultMode.Safe);
+            IEnumerable<(EntityID, Transform, Collider, Velocity, IsStatic)> queryResult = QueryBuilder.Get(m_Query, QueryType.Cached, QueryResultMode.Safe);
 
             QueryResultSOA query = Convert(queryResult, (float)timeSpan.TotalSeconds);
 
@@ -125,18 +125,18 @@ namespace neongine
             m_Storage = currentStorage;
         }
 
-        private QueryResultSOA Convert(IEnumerable<(EntityID, Point, Collider, Velocity, IsStatic)> queryResult, float deltaTime) {
+        private QueryResultSOA Convert(IEnumerable<(EntityID, Transform, Collider, Velocity, IsStatic)> queryResult, float deltaTime) {
             int count = queryResult.Count();
 
             QueryResultSOA query = new QueryResultSOA(count);
 
             int index = 0;
-            foreach ((EntityID id, Point p, Collider c, Velocity v, IsStatic isStatic) in queryResult) {
+            foreach ((EntityID id, Transform t, Collider c, Velocity v, IsStatic isStatic) in queryResult) {
                 query.IDs[index] = id;
-                query.Positions[index] = v == null ? p.WorldPosition2D : p.WorldPosition2D + v.Value * deltaTime;
-                query.Rotations[index] = p.WorldRotation;
-                query.Scales[index] = p.WorldScale;
-                query.Points[index] = p;
+                query.Positions[index] = v == null ? t.WorldPosition2D : t.WorldPosition2D + v.Value * deltaTime;
+                query.Rotations[index] = t.WorldRotation;
+                query.Scales[index] = t.WorldScale;
+                query.Transforms[index] = t;
                 query.Velocities[index] = v;
                 query.Colliders[index] = c;
                 query.Shapes[index] = c.Shape;

@@ -33,8 +33,8 @@ namespace neongine
         private void TestCameraScene()
         {
             EntityID entityID = Neongine.Entity();
-            Point point = entityID.Get<Point>();
-            point.WorldPosition = new Vector3(1, 1, 0);
+            Transform transform = entityID.Get<Transform>();
+            transform.WorldPosition = new Vector3(1, 1, 0);
             entityID.Add(new Renderer(Assets.GetAsset<Texture2D>("ball")));
 
             Camera.Main.Zoom = 1.0f;
@@ -45,9 +45,9 @@ namespace neongine
         private void TestCollisionResolutionScene() {
 
             EntityID entityID = Neongine.Entity();
-            Point point = entityID.Get<Point>();
-            point.WorldPosition = new Vector3(2, 0, 0);
-            point.WorldRotation = 45.0f;
+            Transform transform = entityID.Get<Transform>();
+            transform.WorldPosition = new Vector3(2, 0, 0);
+            transform.WorldRotation = 45.0f;
             Velocity entityVelocity = entityID.Add<Velocity>();
             // entityVelocity.Value = new Vector2(-1.0f, 0.0f);
             entityID.Add(new Renderer(Assets.GetAsset<Texture2D>("ball")));
@@ -55,12 +55,12 @@ namespace neongine
             entityID.Add(new Collider(new Geometry(GeometryType.Rectangle, 0.6f), 1.0f));
 
             EntityID wallID = Neongine.Entity();
-            Point wallPoint = wallID.Get<Point>();
+            Transform wallTransform = wallID.Get<Transform>();
             wallID.Add<IsStatic>();
             //Velocity wallVelocity = wallID.Add<Velocity>();
             // wallVelocity.Value = new Vector2(1.0f, 0.0f);
-            wallPoint.WorldRotation = 37.0f;
-            wallPoint.WorldPosition = new Vector3(-2, 0, 0);
+            wallTransform.WorldRotation = 37.0f;
+            wallTransform.WorldPosition = new Vector3(-2, 0, 0);
             wallID.Add(new Renderer(Assets.GetAsset<Texture2D>("ball")));
             wallID.Add(new Collider(new Shape([
                                                 new Vector2(0, 0.5f),
@@ -91,21 +91,21 @@ namespace neongine
 
             entityID_3.SetParent(entityID_1);
 
-            var point1 = entityID_1.Get<Point>();
-            var point2 = entityID_2.Get<Point>();
-            var point3 = entityID_3.Get<Point>();
+            var transform1 = entityID_1.Get<Transform>();
+            var transform2 = entityID_2.Get<Transform>();
+            var transform3 = entityID_3.Get<Transform>();
 
-            point1.WorldPosition = new Vector3(1, 1, 0) * 200;
-            point2.WorldPosition = Vector3.Right * 100 + Vector3.Up * 50;
-            point3.LocalPosition = Vector3.Right * 75;
+            transform1.WorldPosition = new Vector3(1, 1, 0) * 200;
+            transform2.WorldPosition = Vector3.Right * 100 + Vector3.Up * 50;
+            transform3.LocalPosition = Vector3.Right * 75;
 
             entityID_1.Add(new Renderer(ballTexture));
             entityID_2.Add(new Renderer(squareTexture));
             entityID_3.Add(new Renderer(ballTexture));
 
-            point1.WorldScale = Vector2.One * 2;
-            point2.WorldScale = Vector2.One;
-            point3.LocalScale = Vector2.One * 0.5f;
+            transform1.WorldScale = Vector2.One * 2;
+            transform2.WorldScale = Vector2.One;
+            transform3.LocalScale = Vector2.One * 0.5f;
 
             entityID_1.Add<NotDraggable>();
             entityID_2.Add<NotDraggable>();

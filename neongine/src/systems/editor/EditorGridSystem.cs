@@ -12,11 +12,11 @@ namespace neongine.editor
 
         public void Draw()
         {
-            Point point = neon.Components.GetOwner(Camera.Main).Get<Point>();
+            Transform transform = neon.Components.GetOwner(Camera.Main).Get<Transform>();
             Vector2 dimensions = Camera.Main.WorldDimensions;
 
-            int baseX = (int)(point.WorldPosition.X - (dimensions.X / 2));
-            int baseY = (int)(point.WorldPosition.Y - (dimensions.Y / 2));
+            int baseX = (int)(transform.WorldPosition.X - (dimensions.X / 2));
+            int baseY = (int)(transform.WorldPosition.Y - (dimensions.Y / 2));
 
             for (int i = 0; i < dimensions.X + 1; i++)
             {

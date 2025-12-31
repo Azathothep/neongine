@@ -4,7 +4,7 @@ using neon;
 
 namespace neongine
 {
-    public class Point : Component, IAwakable
+    public class Transform : Component, IAwakable
     {
         public bool DirtyPosition => m_WorldPosition.IsDirty;
         public bool DirtyRotation => m_WorldRotation.IsDirty;
@@ -35,8 +35,8 @@ namespace neongine
             SetPositionDirty();
         }
 
-        private Point[] m_Children;
-        private Point m_Parent;
+        private Transform[] m_Children;
+        private Transform m_Parent;
 
         private Vector3 m_ParentWorldPosition
         {
@@ -154,7 +154,7 @@ namespace neongine
             get => Vector2.UnitX.Rotate(WorldRotation);
         } 
 
-        public Point(Vector3 position, float rotation, Vector2 scale)
+        public Transform(Vector3 position, float rotation, Vector2 scale)
         {
             this.m_LocalPosition = position;
             this.m_LocalRotation = rotation;
@@ -165,13 +165,13 @@ namespace neongine
             m_WorldScale = new CachedValue<Vector2>(UpdateWorldScale, scale);
         }
 
-        public Point(Vector3 position) : this(position, 0.0f, Vector2.One) { }
+        public Transform(Vector3 position) : this(position, 0.0f, Vector2.One) { }
 
-        public Point(Vector3 position, float rotation) : this(position, rotation, Vector2.One) { }
+        public Transform(Vector3 position, float rotation) : this(position, rotation, Vector2.One) { }
 
-        public Point() : this(Vector3.Zero, 0.0f, Vector2.One) {}
+        public Transform() : this(Vector3.Zero, 0.0f, Vector2.One) {}
 
-        public Point(Point other) : this(other.WorldPosition, other.WorldRotation, other.WorldScale) { }
+        public Transform(Transform other) : this(other.WorldPosition, other.WorldRotation, other.WorldScale) { }
 
         public void Awake()
         {
@@ -191,7 +191,7 @@ namespace neongine
             if (ownerID.depth == 0)
                 return;
 
-            m_Parent = ownerID.GetParent().Get<Point>();
+            m_Parent = ownerID.GetParent().Get<Transform>();
         }
 
         private void UpdateChildren()
@@ -199,16 +199,16 @@ namespace neongine
             EntityID owner = Components.GetOwner(this);
             if (owner == null)
             {
-                m_Children = new Point[0];
+                m_Children = new Transform[0];
                 return;
             }
 
-            m_Children = owner.GetInChildren<Point>();
+            m_Children = owner.GetInChildren<Transform>();
         }
 
         public override Component Clone()
         {
-            return new Point(this);
+            return new Transform(this);
         }
     }
 }

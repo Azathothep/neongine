@@ -10,11 +10,11 @@ namespace neongine
     [Serialize, Order(OrderType.After, typeof(CollisionSystem))]
     public class AngleVelocitySystem : IGameUpdateSystem
     {
-        private Query<AngleVelocity, Point> m_Query;
+        private Query<AngleVelocity, Transform> m_Query;
 
         public AngleVelocitySystem()
         {
-            m_Query = new Query<AngleVelocity, Point>(new IQueryFilter[]
+            m_Query = new Query<AngleVelocity, Transform>(new IQueryFilter[]
             {
                 new QueryFilter<Collider>(FilterTerm.HasNot) // CollisionSystem doesn't support AngleVelocitied entities
             });
@@ -22,11 +22,11 @@ namespace neongine
 
         public void Update(TimeSpan timeSpan)
         {
-            IEnumerable<(EntityID, AngleVelocity, Point)> qResult = QueryBuilder.Get(m_Query, QueryType.Cached, QueryResultMode.Unsafe);
+            IEnumerable<(EntityID, AngleVelocity, Transform)> qResult = QueryBuilder.Get(m_Query, QueryType.Cached, QueryResultMode.Unsafe);
 
-            foreach ((EntityID _, AngleVelocity v, Point r) in qResult)
+            foreach ((EntityID _, AngleVelocity v, Transform t) in qResult)
             {
-                r.WorldRotation += v.Value * (float)timeSpan.TotalSeconds;
+                t.WorldRotation += v.Value * (float)timeSpan.TotalSeconds;
             }
         }
     }

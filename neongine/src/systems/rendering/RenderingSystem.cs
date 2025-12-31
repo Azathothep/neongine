@@ -15,7 +15,7 @@ namespace neongine
         private SpriteBatch m_SpriteBatch;
         private SpriteFont m_BaseFont;
 
-        private Query<Renderer, Point> m_Query = new();
+        private Query<Renderer, Transform> m_Query = new();
 
         public RenderingSystem(SpriteBatch spriteBatch, SpriteFont baseFont)
         {
@@ -37,12 +37,12 @@ namespace neongine
             // Check all places where move, use position, etc... Use Coordinates.From/ToPixels
             // Have a unique place for Drawing => static RenderingSystem.DrawCircle etc..., that converts position automatically
 
-            foreach ((EntityID _, Renderer r, Point p) in qresult)
+            foreach ((EntityID _, Renderer r, Transform t) in qresult)
             {
                 Render(r,
-                        Camera.Main.WorldToScreen(p.WorldPosition.X, p.WorldPosition.Y),
-                        p.WorldRotation,
-                        p.WorldScale);
+                        Camera.Main.WorldToScreen(t.WorldPosition.X, t.WorldPosition.Y),
+                        t.WorldRotation,
+                        t.WorldScale);
             }
 
             m_SpriteBatch.End();
