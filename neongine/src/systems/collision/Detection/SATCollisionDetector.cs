@@ -13,18 +13,37 @@ namespace neongine
         private struct DetectedCollisions() {
             public (int, int)[] CollisionIndices;
             public Collision[] Collisions;
-            public (int, int)[] TriggersIndices;
         }
 
-        public CollisionDetectionData Detect(IEnumerable<(EntityID, EntityID)> partition, EntityID[] ids, Vector2[] positions, Collider[] colliders, Shape[] shapes, Bounds[] bounds)
+        // public CollisionDetectionData Detect(IEnumerable<(EntityID, EntityID)> partition, EntityID[] ids, Vector2[] positions, Collider[] colliders, Shape[] shapes, Bounds[] bounds)
+        // {
+        //     (int, int)[] crossingBounds = BoundDetections(partition, ids, positions, bounds);
+
+        //     DetectedCollisions detections = ShapeDetections(crossingBounds, positions, colliders, shapes);
+
+        //     CollisionDetectionData datas = Convert(detections, ids);
+
+        //     return datas;
+        // }
+
+        public void Detect(IEnumerable<(EntityID, EntityID)> partition, EntityID[] ids, Vector2[] positions, Collider[] colliders, Shape[] shapes, Bounds[] bounds, out CollisionData[] collisionData)
         {
             (int, int)[] crossingBounds = BoundDetections(partition, ids, positions, bounds);
 
-            DetectedCollisions detections = ShapeDetections(crossingBounds, positions, colliders, shapes);
+            ShapeDetections(crossingBounds, positions, colliders, shapes, out DetectedCollisions detections);
 
-            CollisionDetectionData datas = Convert(detections, ids);
+            collisionData = Convert(detections, ids);
+        }
 
-            return datas;
+        public (EntityID, EntityID)[] Detect(IEnumerable<(EntityID, EntityID)> partition, EntityID[] ids, Vector2[] positions, Collider[] colliders, Shape[] shapes, Bounds[] bounds)
+        {
+            (int, int)[] crossingBounds = BoundDetections(partition, ids, positions, bounds);
+
+            ShapeDetections(crossingBounds, positions, colliders, shapes, out (int, int)[] detection);
+
+            (EntityID, EntityID)[] crossingEntities = Convert(detection, ids);
+        
+            return crossingEntities;
         }
 
         private (int, int)[] BoundDetections(IEnumerable<(EntityID, EntityID)> partition, EntityID[] ids, Vector2[] positions, Bounds[] bounds) {
@@ -48,29 +67,34 @@ namespace neongine
             return crossingBounds.ToArray();
         }
 
-        private DetectedCollisions ShapeDetections((int, int)[] indices, Vector2[] positions, Collider[] colliders, Shape[] shapes) {
+        private void ShapeDetections((int, int)[] indices, Vector2[] positions, Collider[] colliders, Shape[] shapes, out DetectedCollisions detectedCollisions) {
             List<(int, int)> collisionIndices = new();
             List<Collision> collisionList = new();
-            List<(int, int)> triggerIndices = new();
             
             foreach ((int i1, int i2) in indices) {
-                if (!colliders[i1].IsTrigger && !colliders[i2].IsTrigger) {
-                    if (EvaluateCollision(positions[i1], colliders[i1], shapes[i1], positions[i2], colliders[i2], shapes[i2], out Collision collision)) {
-                        collisionIndices.Add((i1, i2));
-                        collisionList.Add(collision);
-                    }
-                } else if (EvaluateCollision(positions[i1], colliders[i1], shapes[i1], positions[i2], colliders[i2], shapes[i2])) {
-                        triggerIndices.Add((i1, i2));
+                if (EvaluateCollision(positions[i1], colliders[i1], shapes[i1], positions[i2], colliders[i2], shapes[i2], out Collision collision)) {
+                    collisionIndices.Add((i1, i2));
+                    collisionList.Add(collision);
                 }
             }
 
-            DetectedCollisions data = new DetectedCollisions() {
+            detectedCollisions = new DetectedCollisions() {
                 CollisionIndices = collisionIndices.ToArray(),
-                Collisions = collisionList.ToArray(),
-                TriggersIndices = triggerIndices.ToArray()
+                Collisions = collisionList.ToArray()
             };
+        }
 
-            return data;
+        private void ShapeDetections((int, int)[] indices, Vector2[] positions, Collider[] colliders, Shape[] shapes, out (int, int)[] detectedTriggers)
+        {
+            List<(int, int)> detectedTriggersList = new();
+            
+            foreach ((int i1, int i2) in indices) {
+                if (EvaluateCollision(positions[i1], colliders[i1], shapes[i1], positions[i2], colliders[i2], shapes[i2])) {
+                        detectedTriggersList.Add((i1, i2));
+                }
+            }
+
+            detectedTriggers = detectedTriggersList.ToArray();
         }
 
         private bool EvaluateCollision(Vector2 p1, Collider c1, Shape s1, Vector2 p2, Collider c2, Shape s2) {
@@ -104,7 +128,7 @@ namespace neongine
             return false;
         }
 
-        private CollisionDetectionData Convert(DetectedCollisions shapeDatas, EntityID[] ids) {
+        private CollisionData[] Convert(DetectedCollisions shapeDatas, EntityID[] ids) {
             CollisionData[] collisionData = new CollisionData[shapeDatas.CollisionIndices.Count()];
 
             for (int i = 0; i < shapeDatas.CollisionIndices.Count(); i++) {
@@ -114,17 +138,17 @@ namespace neongine
                 };
             }
 
-            (EntityID, EntityID)[] triggers = new (EntityID, EntityID)[shapeDatas.TriggersIndices.Count()];
+            return collisionData;
+        }
 
-            for (int i = 0; i < shapeDatas.TriggersIndices.Length; i++)
-                triggers[i] = (ids[shapeDatas.TriggersIndices[i].Item1], ids[shapeDatas.TriggersIndices[i].Item2]);
+        private (EntityID, EntityID)[] Convert((int, int)[] crossingDatas, EntityID[] ids)
+        {
+            (EntityID, EntityID)[] triggers = new (EntityID, EntityID)[crossingDatas.Length];
 
-            CollisionDetectionData datas = new CollisionDetectionData() {
-                Collisions = collisionData,
-                Triggers = triggers
-            };
+            for (int i = 0; i < crossingDatas.Length; i++)
+                triggers[i] = (ids[crossingDatas[i].Item1], ids[crossingDatas[i].Item2]);
 
-            return datas;
+            return triggers;
         }
     }
 }

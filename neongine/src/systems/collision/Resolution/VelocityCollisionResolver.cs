@@ -1,8 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
-using System.Security.Cryptography.X509Certificates;
 using Microsoft.Xna.Framework;
 using neon;
 
@@ -53,7 +51,7 @@ namespace neongine {
             public bool HasPriorityAgainst(Correction other) => this.Length < other.Length;
         }
 
-        public void Resolve(CollisionData[] collisionDatas, EntityID[] entityIDs, Velocity[] velocities, bool[] isStatic, float deltaTime)
+        public void Resolve(CollisionData[] collisionDatas, EntityID[] entityIDs, Transform[] transforms, Vector2[] positions, Velocity[] velocities, bool[] isStatic, float deltaTime)
         {
             List<OneMovementData> oneMovementResolutions;
             List<TwoMovementsData> twoMovementsResolutions;
@@ -66,6 +64,7 @@ namespace neongine {
             
             foreach (var correction in entityToCorrections) {
                 velocities[correction.Key].Value = correction.Value.Velocity / deltaTime;
+                positions[correction.Key] = transforms[correction.Key].WorldPosition2D + correction.Value.Velocity;
             }
         }
 

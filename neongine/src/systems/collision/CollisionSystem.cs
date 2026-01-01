@@ -6,11 +6,6 @@ using System.Linq;
 
 namespace neongine
 {
-    public struct CollisionDetectionData {
-        public CollisionData[] Collisions;
-        public (EntityID, EntityID)[] Triggers;
-    }
-
     public struct CollisionData {
         public (EntityID, EntityID) Entities;
         public Collision Collision;
@@ -114,11 +109,15 @@ namespace neongine
 
             IEnumerable<(EntityID, EntityID)> partition = m_SpacePartitioner.Partition(query.IDs, query.Positions, query.Bounds);
 
-            CollisionDetectionData detectionData = m_CollisionDetector.Detect(partition, query.IDs, query.Positions, query.Colliders, query.Shapes, query.Bounds);
+            Separate(partition, query.IDs, query.Colliders, out (EntityID, EntityID)[] collisionPartition, out (EntityID, EntityID)[] triggerPartition);
 
-            m_CollisionResolver.Resolve(detectionData.Collisions, query.IDs, query.Velocities, query.IsStatic, (float)timeSpan.TotalSeconds);
+            m_CollisionDetector.Detect(collisionPartition, query.IDs, query.Positions, query.Colliders, query.Shapes, query.Bounds, out CollisionData[] collisionData);
 
-            FrameDataStorage currentStorage = Convert(detectionData);
+            m_CollisionResolver.Resolve(collisionData, query.IDs, query.Transforms, query.Positions, query.Velocities, query.IsStatic, (float)timeSpan.TotalSeconds);
+
+            (EntityID, EntityID)[] triggerData = m_CollisionDetector.Detect(triggerPartition, query.IDs, query.Positions, query.Colliders, query.Shapes, query.Bounds);
+
+            FrameDataStorage currentStorage = Convert(collisionData, triggerData);
 
             TriggerEvents(currentStorage);
 
@@ -149,13 +148,33 @@ namespace neongine
             return query;
         }
 
-        private FrameDataStorage Convert(CollisionDetectionData detectionDatas) {
+        private void Separate(IEnumerable<(EntityID, EntityID)> partition, EntityID[] ids, Collider[] colliders, out (EntityID, EntityID)[] collisionPartition, out (EntityID, EntityID)[] triggerPartition)
+        {
+            List<(EntityID, EntityID)> collisionPartitionList = new();
+            List<(EntityID, EntityID)> triggerPartitionList = new();
+
+            foreach (var part in partition)
+            {
+                int i1 = Array.FindIndex(ids, id => id == part.Item1);
+                int i2 = Array.FindIndex(ids, id => id == part.Item2);
+                
+                if (colliders[i1].IsTrigger || colliders[i2].IsTrigger)
+                    triggerPartitionList.Add((part.Item1, part.Item2));
+                else
+                    collisionPartitionList.Add((part.Item1, part.Item2));
+            }
+
+            collisionPartition = collisionPartitionList.ToArray();
+            triggerPartition = triggerPartitionList.ToArray();
+        }
+
+        private FrameDataStorage Convert(CollisionData[] collisionDatas, (EntityID, EntityID)[] triggerDatas) {
             FrameDataStorage storage = new FrameDataStorage();
 
-            for (int i = 0; i < detectionDatas.Collisions.Length; i++) {
-                EntityID entity1 = detectionDatas.Collisions[i].Entities.Item1;
-                EntityID entity2 = detectionDatas.Collisions[i].Entities.Item2;
-                Collision collision = detectionDatas.Collisions[i].Collision;
+            for (int i = 0; i < collisionDatas.Length; i++) {
+                EntityID entity1 = collisionDatas[i].Entities.Item1;
+                EntityID entity2 = collisionDatas[i].Entities.Item2;
+                Collision collision = collisionDatas[i].Collision;
 
                 storage.CollisionPairs.Add((entity1, entity2), collision);
     
@@ -173,10 +192,10 @@ namespace neongine
                 value2.Add((entity1, collision));
             }
 
-            for (int i = 0; i < detectionDatas.Triggers.Length; i++) {
-                (EntityID entity1, EntityID entity2) = detectionDatas.Triggers[i];
+            for (int i = 0; i < triggerDatas.Length; i++) {
+                (EntityID entity1, EntityID entity2) = triggerDatas[i];
 
-                storage.TriggerPairs.Add(detectionDatas.Triggers[i]);
+                storage.TriggerPairs.Add(triggerDatas[i]);
 
                 if (!storage.EntityToTriggers.TryGetValue(entity1, out List<EntityID> value1)) {
                     value1 = new List<EntityID>();

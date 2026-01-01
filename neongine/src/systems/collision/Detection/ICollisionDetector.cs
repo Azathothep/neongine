@@ -6,6 +6,7 @@ namespace neongine
 {
     public interface ICollisionDetector
     {
-        public CollisionDetectionData Detect(IEnumerable<(EntityID, EntityID)> partition, EntityID[] entityIDs, Vector2[] positions, Collider[] colliders, Shape[] shapes, Bounds[] bounds);
+        public void Detect(IEnumerable<(EntityID, EntityID)> partition, EntityID[] ids, Vector2[] positions, Collider[] colliders, Shape[] shapes, Bounds[] bounds, out CollisionData[] collisionData);
+        public (EntityID, EntityID)[] Detect(IEnumerable<(EntityID, EntityID)> partition, EntityID[] ids, Vector2[] positions, Collider[] colliders, Shape[] shapes, Bounds[] bounds);
     }
 }
