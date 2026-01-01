@@ -17,7 +17,7 @@ namespace neongine
             m_Game = game;
 
             _graphics = new GraphicsDeviceManager(this);
-            Content.RootDirectory = "Content";
+            Content.RootDirectory = "Assets";
             IsMouseVisible = true;
             RootDirectory = Content.RootDirectory;
         }
