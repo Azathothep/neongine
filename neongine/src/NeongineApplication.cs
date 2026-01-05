@@ -72,17 +72,18 @@ namespace neongine
 
         protected override void Draw(GameTime gameTime)
         {
-            GraphicsDevice.Clear(Color.LightSlateGray);
-
 #if !NEONGINE_BUILD
             if (EditorPlayModeSystem.IsPlayMode)
             {
+                GraphicsDevice.Clear(Color.Black);
                 neongine.Systems.Draw(neongine.Systems.PlayModeSystems);
             } else
             {
+                GraphicsDevice.Clear(Color.LightSlateGray);
                 neongine.Systems.Draw(neongine.Systems.EditorSystems);
             }
 #else
+            GraphicsDevice.Clear(Color.Black);
             neongine.Systems.Draw(neongine.Systems.GameSystems);
 #endif
 
