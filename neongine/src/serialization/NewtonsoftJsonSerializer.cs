@@ -51,7 +51,7 @@ namespace neongine
 
         public string SerializeSystem<T>(T system) where T : ISystem
         {
-            return JsonConvert.SerializeObject(system, SystemSerializerSettings);
+            return JsonConvert.SerializeObject(system, system.GetType(), SystemSerializerSettings);
         }
 
         public ISystem DeserializeSystem(string serializedData, Type type)
