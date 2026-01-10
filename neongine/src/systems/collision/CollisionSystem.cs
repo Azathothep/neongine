@@ -219,14 +219,14 @@ namespace neongine
             return instance.m_Storage.EntityToCollisions.ContainsKey(id) || instance.m_Storage.EntityToTriggers.ContainsKey(id);
         }
 
-        public static List<(EntityID, Collision)> GetCollisions(EntityID id)
+        public static List<(EntityID, Collision)> GetFrameCollisions(EntityID id)
         {
             if (instance.m_Storage.EntityToCollisions.TryGetValue(id, out var value))
                 return value;
             return null;
         }
 
-        public static List<EntityID> GetTriggers(EntityID id)
+        public static List<EntityID> GetFrameTriggers(EntityID id)
         {
             if (instance.m_Storage.EntityToTriggers.TryGetValue(id, out var value))
                 return value;

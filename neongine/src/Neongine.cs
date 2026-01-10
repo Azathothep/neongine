@@ -57,13 +57,11 @@ namespace neongine
             Systems.Add(new EditorPlayModeSystem());
         }
 
-        public static EntityID Entity(string name = null)
+        public static EntityID Entity(string name = "new_entity", Vector3 position = default, float rotation = 0.0f, Vector2 scale = default)
         {
             EntityID entityID = Entities.GetID();
 
-            name = name == null ? "new_entity" : name;
-
-            entityID.Add<Transform>();
+            entityID.Add(new Transform(position, rotation, scale == default ? Vector2.One : scale));
             entityID.Add(new Name(name));
 
             return entityID;
