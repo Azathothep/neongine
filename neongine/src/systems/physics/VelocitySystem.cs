@@ -8,7 +8,7 @@ using System.Diagnostics;
 
 namespace neongine
 {
-    [Serialize, Order(OrderType.After, typeof(CollisionSystem))]
+    [Order(OrderType.After, typeof(CollisionSystem))]
     public class VelocitySystem : IGameUpdateSystem
     {
         private Query<Transform, Velocity> m_Query;

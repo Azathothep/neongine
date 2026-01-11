@@ -13,7 +13,7 @@ namespace neongine
     public struct SceneDefinition
     {
         public SystemData[] SystemDatas { get; set; }
-
+        public uint[] LoadedSystems { get; set; }
         public EntityGraph EntityGraph { get; set; }
     }
 
@@ -40,6 +40,7 @@ namespace neongine
 
     public struct SystemData
     {
+        public uint id;
         public string typeName;
         public string serializedData;
     }

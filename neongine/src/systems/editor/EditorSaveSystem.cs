@@ -11,7 +11,8 @@ namespace neongine.editor
     {
         public bool ActiveInPlayMode => true;
         
-        public static string SavePath = "scenes/MainScene.json";
+        public static string RelativeSavePath = "scenes/MainScene.json";
+        public static string AbsoluteSavePath => "./" + NeongineApplication.RootDirectory + "/" + RelativeSavePath;
 
         private ButtonState m_PreviousState_S;
         private ButtonState m_PreviousState_L;
@@ -36,11 +37,9 @@ namespace neongine.editor
                 SceneDefinition sceneDefinition = Scenes.GetDefinition(runtimeScene);
                 string jsonString = Serializer.SerializeScene(sceneDefinition);
 
-                string savePath = "./" + NeongineApplication.RootDirectory + "/" + SavePath;
+                Debug.WriteLine("Saving to : " + EditorSaveSystem.AbsoluteSavePath);
 
-                Debug.WriteLine("Saving to : " + savePath);
-
-                File.WriteAllText(savePath, jsonString);
+                File.WriteAllText(EditorSaveSystem.AbsoluteSavePath, jsonString);
 
                 Debug.WriteLine("Scene has been saved !");
 

@@ -9,9 +9,16 @@ namespace neongine
 {
     public static class Scenes
     {
+        private struct SceneSerializer
+        {
+            public HashSet<ISystem> ReferencedSystems = new();
+            public Dictionary<Type, MemberInfo[]> TypeToDependentSystems = new();
+            public SceneSerializer() { }
+        }
+
 		private struct SceneConstructor
 		{
-            public Dictionary<uint, EntityID> SceneIDToEntityID = new();
+            public Dictionary<uint, object> SceneIDToObjectID = new();
 			public Dictionary<Type, MemberInfo[]> TypeToDependentMembers = new();
             public Dictionary<object, uint[]> Dependencies = new();
 
@@ -35,7 +42,7 @@ namespace neongine
 
             BuildHierarchy(scene.EntityGraph, sceneConstructor);
 
-            BuildSystems(scene.SystemDatas, sceneConstructor);
+            BuildSystems(scene.SystemDatas, scene.LoadedSystems, sceneConstructor);
 
             ResolveSceneDependencies(sceneConstructor);
 
@@ -83,12 +90,12 @@ namespace neongine
         {
             EntityID entityID = Entities.GetID();
 
-            sceneConstructor.SceneIDToEntityID.Add(entityData.id, entityID);
+            sceneConstructor.SceneIDToObjectID.Add(entityData.id, entityID);
 
             foreach (var componentData in entityData.components)
 			{
                 Component component = BuildComponent(entityID, componentData);
-				sceneConstructor.SceneIDToEntityID.Add(componentData.id, component.EntityID);
+				sceneConstructor.SceneIDToObjectID.Add(componentData.id, component.EntityID);
 
                 RegisterDependencies(component, componentData.serializedData, sceneConstructor);
 			}
@@ -165,8 +172,8 @@ namespace neongine
             for (int i = 0; i < memberInfos.Length; i++)
             {
                 uint sceneID = sceneIDs[i];
-                EntityID entityID = sceneConstructor.SceneIDToEntityID[sceneIDs[i]];
-                if (entityID == null)
+                object o = sceneConstructor.SceneIDToObjectID[sceneIDs[i]];
+                if (o == null)
                 {
                     Debug.WriteLine($"EntityID of sceneID {sceneID} not found");
                     continue;
@@ -174,11 +181,9 @@ namespace neongine
 
                 Type memberType = memberInfos[i] is FieldInfo fieldInfo ? fieldInfo.FieldType : ((PropertyInfo)memberInfos[i]).PropertyType;
 
-                if (memberType == typeof(EntityID))
+                if (typeof(Component).IsAssignableFrom(memberType))
                 {
-                    ResolveDependency(memberInfos[i], existingObject, entityID);
-                } else if (typeof(Component).IsAssignableFrom(memberType))
-                {
+                    EntityID entityID = (EntityID)o;
                     Component componentToAssign = entityID.GetParent().GetComponentOfEntityID(entityID);
                     if (componentToAssign == null)
                     {
@@ -187,6 +192,9 @@ namespace neongine
                     }
 
                     ResolveDependency(memberInfos[i], existingObject, componentToAssign);
+                } else
+                {
+                    ResolveDependency(memberInfos[i], existingObject, o);
                 }
             }
 		}
@@ -208,28 +216,33 @@ namespace neongine
                 SerializeAttribute serializable = fieldInfo.GetCustomAttribute<SerializeAttribute>();
                 return serializable != null
                 && (fieldInfo.FieldType == typeof(EntityID)
-                || typeof(Component).IsAssignableFrom(fieldInfo.FieldType));
+                || typeof(Component).IsAssignableFrom(fieldInfo.FieldType)
+                || typeof(ISystem).IsAssignableFrom(fieldInfo.FieldType));
             }).ToArray();
 
             MemberInfo[] propertyInfos = type.GetProperties(flags).Where(property =>
             {
                 return property.CanWrite && property.GetCustomAttribute<SerializeAttribute>() != null
                 && (property.PropertyType == typeof(EntityID)
-                || typeof(Component).IsAssignableFrom(property.PropertyType));
+                || typeof(Component).IsAssignableFrom(property.PropertyType)
+                || typeof(ISystem).IsAssignableFrom(property.PropertyType));
             }).ToArray();
 
             return (fieldInfos.Concat(propertyInfos)).ToArray();
         }
 
-        private static void BuildSystems(SystemData[] systemDatas, SceneConstructor sceneConstructor)
+        private static void BuildSystems(SystemData[] systemDatas, uint[] loadedSystems, SceneConstructor sceneConstructor)
         {
             foreach (var systemData in systemDatas)
             {
                 ISystem system = BuildSystem(systemData);
 
+                sceneConstructor.SceneIDToObjectID.Add(systemData.id, system);
+
                 RegisterDependencies(system, systemData.serializedData, sceneConstructor);
 
-                Systems.Add(system);
+                if (loadedSystems.Contains(systemData.id))
+                    Systems.Add(system);
             }
         }
 
@@ -242,41 +255,67 @@ namespace neongine
 
         public static SceneDefinition GetDefinition(RuntimeScene runtimeScene)
         {
+            SceneSerializer sceneSerializer = new SceneSerializer();
+
             EntityData[] entityDatas = new EntityData[runtimeScene.Roots.Length];
 
             for (int i = 0; i < runtimeScene.Roots.Length; i++)
-                entityDatas[i] = GetEntityData(runtimeScene.Roots[i]);
+                entityDatas[i] = GetEntityData(runtimeScene.Roots[i], sceneSerializer);
 
             EntityGraph entityGraph = new EntityGraph()
             {
                 entities = entityDatas
             };
 
-            SystemData[] systemDatas = GetSystemDatas(runtimeScene.GameSystems);
+            uint[] loadedSystems = GetLoadedSystemIDs(runtimeScene.GameSystems);
+
+            foreach (var system in runtimeScene.GameSystems)
+                sceneSerializer.ReferencedSystems.Add(system);
+
+            SystemData[] systemDatas = GetSystemDatas(sceneSerializer);
 
             SceneDefinition sceneDefinition = new SceneDefinition()
             {
                 SystemDatas = systemDatas,
+                LoadedSystems = loadedSystems,
                 EntityGraph = entityGraph
             };
 
             return sceneDefinition;
         }
 
-        private static SystemData[] GetSystemDatas(ISystem[] gameSystems)
+        private static uint[] GetLoadedSystemIDs(ISystem[] systems)
         {
+            ISystem[] serializableSystems = GetSerializableSystems(systems);
+
+            uint[] systemIDs = new uint[serializableSystems.Length];
+
+            for (int i = 0; i < serializableSystems.Length; i++)
+                systemIDs[i] = (uint)serializableSystems[i].GetHashCode();
+
+            return systemIDs;
+        }
+
+        private static SystemData[] GetSystemDatas(SceneSerializer sceneSerializer)
+        {
+            ISystem[] serializableSystems = GetSerializableSystems(sceneSerializer.ReferencedSystems);
+
+            foreach (var system in serializableSystems)
+                RegisterDependentSystems(system, sceneSerializer);
+
+            serializableSystems = GetSerializableSystems(sceneSerializer.ReferencedSystems);
+
             List<SystemData> systemDatas = new List<SystemData>();
 
-            ISystem[] serializableSystems = GetSerializableSystems(gameSystems);
-
-            foreach (var us in serializableSystems)
+            foreach (var system in serializableSystems)
             {
-                Type systemType = us.GetType();
+                Type systemType = system.GetType();
 
                 SystemData systemData = new SystemData()
                 {
+                    id = system == null ? 0 : (uint)system.GetHashCode(),
                     typeName = systemType.AssemblyQualifiedName,
-                    serializedData = Serializer.SerializeSystem(us)
+                    serializedData = Serializer.SerializeSystem(system)
                 };
 
                 systemDatas.Add(systemData);
@@ -285,7 +324,7 @@ namespace neongine
             return systemDatas.ToArray();
         }
 
-        private static ISystem[] GetSerializableSystems(ISystem[] gameSystems)
+        private static ISystem[] GetSerializableSystems(IEnumerable<ISystem> gameSystems)
         {
             List<ISystem> serializableSystems = new();
 
@@ -307,7 +346,7 @@ namespace neongine
             return entity.GetType().GetCustomAttribute<DoNotSerializeAttribute>() == null;
         }
 
-        private static EntityData GetEntityData(EntityID entityID)
+        private static EntityData GetEntityData(EntityID entityID, SceneSerializer sceneSerializer)
         {
             Component[] components = entityID.GetAll(); // Get all components
 
@@ -319,14 +358,15 @@ namespace neongine
                     continue;
                 
                 componentDatas.Add(GetComponentData(components[i], componentType));
+                RegisterDependentSystems(components[i], sceneSerializer);
             }
 
-            EntityID[] children = entityID.GetChildren(false); // new EntityID[0]; // Get all children
+            EntityID[] children = entityID.GetChildren(includeComponents: false);
 
             EntityData[] childrenDatas = new EntityData[children.Length];
 
             for (int i = 0; i < children.Length; i++)
-                childrenDatas[i] = GetEntityData(children[i]);
+                childrenDatas[i] = GetEntityData(children[i], sceneSerializer);
 
             EntityData entityData = new EntityData()
             {
@@ -337,6 +377,55 @@ namespace neongine
             };
 
             return entityData;
+        }
+
+        private static void RegisterDependentSystems(object o, SceneSerializer sceneSerializer)
+        {
+            Type type = o.GetType();
+
+            if (!sceneSerializer.TypeToDependentSystems.TryGetValue(type, out MemberInfo[] memberSystems))
+            {
+                memberSystems = GetDependentSystems(type);
+                sceneSerializer.TypeToDependentSystems.Add(type, memberSystems);
+            }
+
+            if (memberSystems.Length == 0)
+                return;
+                
+            for (int i = 0; i < memberSystems.Length; i++)
+            {
+                sceneSerializer.ReferencedSystems.Add(GetMemberSystem(o, memberSystems[i]));
+            }
+        }
+
+        private static MemberInfo[] GetDependentSystems(Type type)
+		{
+            BindingFlags flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
+
+            MemberInfo[] fieldInfos = type.GetFields(flags).Where(fieldInfo =>
+            {
+                SerializeAttribute serializable = fieldInfo.GetCustomAttribute<SerializeAttribute>();
+                return serializable != null
+                && typeof(ISystem).IsAssignableFrom(fieldInfo.FieldType);
+            }).ToArray();
+
+            MemberInfo[] propertyInfos = type.GetProperties(flags).Where(property =>
+            {
+                return property.CanWrite && property.GetCustomAttribute<SerializeAttribute>() != null
+                && typeof(ISystem).IsAssignableFrom(property.PropertyType);
+            }).ToArray();
+
+            return (fieldInfos.Concat(propertyInfos)).ToArray();
+        }
+
+        private static ISystem GetMemberSystem(object o, MemberInfo info)
+        {
+            if (info is FieldInfo field)
+                return (ISystem)field.GetValue(o);
+            else if (info is PropertyInfo property)
+                return (ISystem)property.GetValue(o);
+
+            return default;;
         }
 
         private static ComponentData GetComponentData(Component component, Type type)

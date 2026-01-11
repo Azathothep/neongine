@@ -76,7 +76,7 @@ namespace neongine
         }
 
         private void LoadScene() {
-            string scenePath = "./" + NeongineApplication.RootDirectory + "/" + neongine.editor.EditorSaveSystem.SavePath;
+            string scenePath = "./" + NeongineApplication.RootDirectory + "/" + neongine.editor.EditorSaveSystem.RelativeSavePath;
             Scenes.Load(scenePath);
         }
 

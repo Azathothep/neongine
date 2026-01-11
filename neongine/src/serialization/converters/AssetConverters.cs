@@ -1,10 +1,5 @@
 ﻿using Microsoft.Xna.Framework.Graphics;
 using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace neongine
 {
@@ -12,7 +7,8 @@ namespace neongine
     {
         private static JsonConverter[] m_Converters = new JsonConverter[]
         {
-            new AssetConverter<Texture2D>()
+            new AssetConverter<Texture2D>(),
+            new AssetConverter<SpriteFont>()
         };
 
         public static JsonConverter[] Converters => m_Converters;

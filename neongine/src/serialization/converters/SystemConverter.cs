@@ -1,16 +1,14 @@
-﻿using Newtonsoft.Json;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using neon;
 using Newtonsoft.Json.Serialization;
 using System.Reflection;
-using Microsoft.Xna.Framework.Graphics;
-using System.Diagnostics;
 using System.Linq;
 
 namespace neongine
 {
-    public class ComponentConverter : JsonConverter
+    public class SystemConverter : JsonConverter
     {
         private static JsonSerializer m_Serializer = JsonSerializer.Create(new JsonSerializerSettings()
         {
@@ -25,7 +23,7 @@ namespace neongine
 
         public override bool CanConvert(Type objectType)
         {
-            return typeof(Component).IsAssignableFrom(objectType);
+            return typeof(ISystem).IsAssignableFrom(objectType);
         }
 
         public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
@@ -34,24 +32,22 @@ namespace neongine
                 component = FormatterServices.GetUninitializedObject(objectType);
             }*/
 
-            object component = m_Serializer.Deserialize(reader, objectType);
+            object system = m_Serializer.Deserialize(reader, objectType);
 
-            return component;
+            return system;
         }
 
         public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
         {
             JObject o = new JObject();
 
-            Type componentType = value.GetType();
+            Type systemType = value.GetType();
 
-            JsonObjectContract contract = serializer.ContractResolver.ResolveContract(componentType) as JsonObjectContract;
+            JsonObjectContract contract = serializer.ContractResolver.ResolveContract(systemType) as JsonObjectContract;
 
             foreach (var property in contract.Properties)
             {
-                // Debug.WriteLine("Writing for " + value.GetType().Name + ", property: " + property.PropertyName);
-
-                object memberValue = GetObjectValue(property.PropertyName, value, componentType);
+                object memberValue = GetObjectValue(property.PropertyName, value, systemType);
 
                 o.Add(property.PropertyName, JToken.FromObject(memberValue, m_Serializer));
             }

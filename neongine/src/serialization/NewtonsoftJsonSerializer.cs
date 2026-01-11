@@ -14,7 +14,7 @@ namespace neongine
             ContractResolver = SerializeContractResolver.Instance,
             ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor,
             Converters = {
-                new ComponentConverter(),
+                new ComponentConverter()
             },
         };
 
@@ -22,10 +22,9 @@ namespace neongine
         {
             ContractResolver = SerializeContractResolver.Instance,
             ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor,
-            Converters = AssetConverters.Converters.Concat(new JsonConverter[] {
-                        new ComponentIDConverter(),
-                        new EntityIDConverter(),
-            }).ToArray()
+            Converters = {
+                new SystemConverter()
+            },
         };
 
         private JsonSerializerSettings m_SceneSerializerSettings = new JsonSerializerSettings()
@@ -80,6 +79,7 @@ namespace neongine
                 return null;
             }
 
+            //TODO: set global Key / GUID for any object, instead of EntityIDConverter or SystemIDConverter
             JToken idToken = token[EntityIDConverter.IDKey];
             if (token == null)
             {
