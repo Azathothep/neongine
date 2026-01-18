@@ -4,27 +4,50 @@ using neon;
 
 namespace neongine
 {
+    /// <summary>
+    /// Add the possibility to react to collisions and triggers
+    /// </summary>
     public class Collider : Component
     {
         [Serialize]
         private Shape m_BaseShape;
+
+        /// <summary>
+        /// The base shape of the collider (doesn't update from rotation nor scale)
+        /// </summary>
         public Shape BaseShape => m_BaseShape;
 
         [Serialize]
         private float m_Size = 1;
+
+        /// <summary>
+        /// The collider's shape size
+        /// </summary>
         public float Size => m_Size;
 
         [Serialize]
         private float m_Rotation = 0.0f;
+        /// <summary>
+        /// The collider's shape rotation
+        /// </summary>
         public float Rotation = 0.0f;
 
+        /// <summary>
+        /// Does the collider react to collisions or overlaps ?
+        /// </summary>
         [Serialize]
         public bool IsTrigger = false;
 
         private Shape m_Shape;
+        /// <summary>
+        /// The shape of the collider, updating with the entitie's rotation, the entitie's scale, the collider's rotation and the collider's size 
+        /// </summary>
         public Shape Shape => m_Shape;
         
         private Bounds m_Bound;
+        /// <summary>
+        /// The collider's bounds, encompassing the whole shape
+        /// </summary>
         public Bounds Bound => m_Bound;
 
         private Shape m_CachedBaseShape;
@@ -48,13 +71,16 @@ namespace neongine
 
         public Collider(Collider other) : this(other.BaseShape, other.Size, other.Rotation, other.IsTrigger) { }
 
-        public bool UpdateShape(float pointRotation, Vector2 scale) {
-            if (m_CachedRotation == (this.Rotation + pointRotation) % 360
+        /// <summary>
+        /// Update the collider's shape, given the entitie's rotation and scale
+        /// </summary>
+        public bool UpdateShape(float transformRotation, Vector2 scale) {
+            if (m_CachedRotation == (this.Rotation + transformRotation) % 360
                 && m_CachedScale == scale
                 && m_CachedBaseShape.Equals(this.BaseShape))
                 return false;
             
-            float targetRotation = (this.Rotation + pointRotation) % 360;
+            float targetRotation = (this.Rotation + transformRotation) % 360;
 
             m_Shape = new Shape(this.BaseShape, targetRotation, scale * this.Size);
 

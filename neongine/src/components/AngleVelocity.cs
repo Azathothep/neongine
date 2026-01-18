@@ -7,10 +7,17 @@ using System.Threading.Tasks;
 
 namespace neongine
 {
+    /// <summary>
+    /// Adds a rotation velocity to the entity
+    /// </summary>
     public class AngleVelocity : Component
     {
         [Serialize]
         private float m_Value = 1.0f;
+
+        /// <summary>
+        /// The speed, in degrees per seconds, at which the entity rotates
+        /// </summary>
         public float Value {
             get => m_Value;
             set => m_Value = value;

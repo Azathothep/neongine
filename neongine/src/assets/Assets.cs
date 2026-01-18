@@ -7,6 +7,9 @@ using System.Threading.Tasks;
 
 namespace neongine
 {
+    /// <summary>
+    /// Manages assets loading using <c>ContentManager</c>
+    /// </summary>
     public static class Assets
     {
         private static Dictionary<Type, Dictionary<string, object>> m_AssetDatabase;
@@ -14,34 +17,43 @@ namespace neongine
 
         public static void SetManager(ContentManager contentManager) => m_ContentManager = contentManager;
 
-        public static T GetAsset<T>(string name)
+        /// <summary>
+        /// Load an asset using the provided path
+        /// </summary>
+        public static T GetAsset<T>(string path)
         {
-            return (T)GetAsset(name, typeof(T));
+            return (T)GetAsset(path, typeof(T));
         }
 
-        public static object GetAsset(string name, Type type)
+        /// <summary>
+        /// Load an asset using the provided path
+        /// </summary>
+        public static object GetAsset(string path, Type type)
         {
-            object asset = GetAssetInDatabase(name, type);
+            object asset = GetAssetInDatabase(path, type);
             if (asset == null)
-                asset = RegisterAssetInDatabse(name, type);
+                asset = RegisterAssetInDatabse(path, type);
 
             return asset;
         }
 
-		public static string GetName(object asset, Type type)
+        /// <summary>
+        /// Get the provided asset's path. Only works if the asset has been previously loaded with <c>GetAsset</c>.
+        /// </summary>
+		public static string GetPath(object asset, Type type)
 		{
 			if (!m_AssetDatabase.TryGetValue(type, out Dictionary<string, object> database))
 				return string.Empty;
 
 			Dictionary<object, string> reverseDatabase = database.ToDictionary(d => d.Value, d => d.Key);
 
-			if (!reverseDatabase.TryGetValue(asset, out string name))
+			if (!reverseDatabase.TryGetValue(asset, out string path))
 				return string.Empty;
 
-			return name;
+			return path;
 		}
 
-        private static object GetAssetInDatabase(string name, Type type)
+        private static object GetAssetInDatabase(string path, Type type)
         {
             if (m_AssetDatabase == null)
                 m_AssetDatabase = new();
@@ -49,15 +61,15 @@ namespace neongine
             if (!m_AssetDatabase.TryGetValue(type, out Dictionary<string, object> database))
                 return null;
 
-            if (!database.TryGetValue(name, out object asset))
+            if (!database.TryGetValue(path, out object asset))
                 return null;
 
             return asset;
         }
 
-        private static object RegisterAssetInDatabse(string name, Type type)
+        private static object RegisterAssetInDatabse(string path, Type type)
         {
-            object asset = m_ContentManager.Load<object>(name);
+            object asset = m_ContentManager.Load<object>(path);
 
             if (asset == null)
                 return null;
@@ -70,7 +82,7 @@ namespace neongine
                 m_AssetDatabase.Add(type, typeDatabase);
             }
 
-            typeDatabase.Add(name, asset);
+            typeDatabase.Add(path, asset);
 
             return asset;
         }

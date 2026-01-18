@@ -5,8 +5,14 @@ using Newtonsoft.Json;
 
 namespace neongine
 {
+    /// <summary>
+    /// Add a sprite to the entity
+    /// </summary>
 	public class Renderer : Component
     {
+        /// <summary>
+        /// The sprite's texture. Use <c>Assets.GetAsset-Texture2D-(string)</c> to load a texture included through the MonoGame Content Builder.
+        /// </summary>
 		[Serialize]
         public Texture2D Texture { get; private set; }
 

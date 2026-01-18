@@ -3,6 +3,9 @@ using Newtonsoft.Json;
 
 namespace neongine
 {
+    /// <summary>
+    /// Stores the entity's name. Each entity created using <c>Neongine.Entity()</c> has one by default.
+    /// </summary>
     public class Name : Component
     {
         [Serialize]

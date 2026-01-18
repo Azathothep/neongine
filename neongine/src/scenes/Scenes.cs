@@ -7,24 +7,54 @@ using neon;
 
 namespace neongine
 {
+    /// <summary>
+    /// Provides functionalities to Load, Unload and Serialize scenes
+    /// </summary>
     public static class Scenes
     {
+        /// <summary>
+        /// Temporary datas used when serializing a scene
+        /// </summary>
         private struct SceneSerializer
         {
+            /// <summary>
+            /// List the systems referenced in the scene
+            /// </summary>
             public HashSet<ISystem> ReferencedSystems = new();
+
+            /// <summary>
+            /// Get all the MemberInfos that reference another system, from a system's type
+            /// </summary>
             public Dictionary<Type, MemberInfo[]> TypeToDependentSystems = new();
             public SceneSerializer() { }
         }
 
+        /// <summary>
+        /// Temporary datas used when building a scene
+        /// </summary>
 		private struct SceneConstructor
 		{
+            /// <summary>
+            /// Get an object from its ID
+            /// </summary>
             public Dictionary<uint, object> SceneIDToObjectID = new();
+
+            /// <summary>
+            /// Get all the MemberInfos that reference another entity, component or system, from a component or a system type
+            /// </summary>
 			public Dictionary<Type, MemberInfo[]> TypeToDependentMembers = new();
+
+            /// <summary>
+            /// List all the object referencing other components or system, and an array storing each reference's ID, in order of the <c>TypeToDependentMembers</c>'s MemberInfo array
+            /// </summary>
             public Dictionary<object, uint[]> Dependencies = new();
 
             public SceneConstructor() { }
         }
 
+        /// <summary>
+        /// Build a scene stored in the file pointed to by the provided path
+        /// </summary>
         public static void Load(string scenePath)
         {
             string jsonString = System.IO.File.ReadAllText(scenePath);
@@ -36,20 +66,27 @@ namespace neongine
             Load(sceneDefinition);
         }
 
+        /// <summary>
+        /// Load a scene using the provided <c>SceneDefinition</c>
+        /// </summary>
+        /// <param name="scene"></param>
         public static void Load(SceneDefinition scene)
         {
             SceneConstructor sceneConstructor = new();
 
+            // Build all the entities and their components
             BuildHierarchy(scene.EntityGraph, sceneConstructor);
 
+            // Build all the systems
             BuildSystems(scene.SystemDatas, scene.LoadedSystems, sceneConstructor);
 
+            // Resolve entities, components and systems references in the required components and systems
             ResolveSceneDependencies(sceneConstructor);
-
-            // EntityID[] rootIds = Entities.GetRoots();
-            // IGameSystem[] gameSystems = Systems.GetLoadedSystems();
         }
 
+        /// <summary>
+        /// Destroy all of the entities and systems stored in the provided <c>RuntimeScene</c>. You can specify whether you want to only destroy the serializable ones (true by default)
+        /// </summary>
         public static void Unload(RuntimeScene scene, bool onlySerializable = true)
         {
             ISystem[] serializableSystems = onlySerializable ? GetSerializableSystems(scene.GameSystems) : scene.GameSystems;
@@ -63,6 +100,9 @@ namespace neongine
                 Entities.Destroy(entity);
         }
 
+        /// <summary>
+        /// Get the current's scene <c>RuntimeScene</c>
+        /// </summary>
         public static RuntimeScene GetRuntime()
         {
             RuntimeScene scene = new RuntimeScene();
@@ -74,6 +114,9 @@ namespace neongine
             return scene;
         }
 
+        /// <summary>
+        /// Build all the entities and components stored in the <c>EntityGraph</c> and register their ids
+        /// </summary>
         private static void BuildHierarchy(EntityGraph entityGraph, SceneConstructor sceneConstructor)
         {
 			int count = entityGraph.entities.Length;
@@ -86,6 +129,9 @@ namespace neongine
 			}
         }
 
+        /// <summary>
+        /// Build an entity and its components, and recursively builds all of its children 
+        /// </summary>
         private static EntityID BuildEntity(EntityData entityData, SceneConstructor sceneConstructor)
         {
             EntityID entityID = Entities.GetID();
@@ -111,6 +157,9 @@ namespace neongine
             return entityID;
         }
 
+        /// <summary>
+        /// Build a component and add it to the provided entity
+        /// </summary>
         private static Component BuildComponent(EntityID entityID, ComponentData componentData)
         {
             Type componentType = Type.GetType(componentData.typeName);
@@ -124,6 +173,9 @@ namespace neongine
 			return newComponent;
         }
 
+        /// <summary>
+        /// Register the possible references this type has towards other entities, components and / or systems
+        /// </summary>
         private static void RegisterDependencies(object existingObject, string serializedData, SceneConstructor sceneConstructor)
         {
             Type type = existingObject.GetType();
@@ -153,6 +205,9 @@ namespace neongine
             }
         }
 
+        /// <summary>
+        /// Inject all the resolvable references recorded during the entities and systems construction
+        /// </summary>
         private static void ResolveSceneDependencies(SceneConstructor sceneConstructor)
         {
             foreach (KeyValuePair<object, uint[]> dependencies in sceneConstructor.Dependencies)
@@ -161,13 +216,14 @@ namespace neongine
             }
         }
 
+        /// <summary>
+        /// Inject all the references this object's has towards other entities, components and / or systems
+        /// </summary>
         private static void ResolveObjectDependencies(object existingObject, uint[] sceneIDs, SceneConstructor sceneConstructor)
 		{
 			Type componentType = existingObject.GetType();
 
             MemberInfo[] memberInfos = sceneConstructor.TypeToDependentMembers[componentType];
-
-            // inject directly with Injectables. No need to check for Infos here, this is done earlies.
 
             for (int i = 0; i < memberInfos.Length; i++)
             {
@@ -199,6 +255,9 @@ namespace neongine
             }
 		}
 
+        /// <summary>
+        /// Inject a single value into the object's MemberInfo.
+        /// </summary>
 		private static void ResolveDependency(MemberInfo memberInfo, object target, object value)
 		{
 			if (memberInfo is FieldInfo fieldInfo)
@@ -207,6 +266,9 @@ namespace neongine
 				propertyInfo.SetValue(target, value);
 		}
 
+        /// <summary>
+        /// Get an array of all the references this type has of an entity, a component or a system.
+        /// </summary>
 		private static MemberInfo[] GetTypeDependencies(Type type)
 		{
             BindingFlags flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
@@ -231,6 +293,9 @@ namespace neongine
             return (fieldInfos.Concat(propertyInfos)).ToArray();
         }
 
+        /// <summary>
+        /// Build all the systems which definitions are stored in the provided SystemDatas, and load the specified ones using their ids.
+        /// </summary>
         private static void BuildSystems(SystemData[] systemDatas, uint[] loadedSystems, SceneConstructor sceneConstructor)
         {
             foreach (var systemData in systemDatas)
@@ -246,6 +311,9 @@ namespace neongine
             }
         }
 
+        /// <summary>
+        /// Build a system from its <c>SystemData</c>.
+        /// </summary>
         private static ISystem BuildSystem(SystemData systemData)
         {
             Type systemType = Type.GetType(systemData.typeName);
@@ -253,6 +321,9 @@ namespace neongine
             return Serializer.DeserializeSystem(systemData.serializedData, systemType);
         }
 
+        /// <summary>
+        /// Get the <c>SceneDefinition</c> of a <c>RuntimeScene</c>, serializing the systems and the components.
+        /// </summary>
         public static SceneDefinition GetDefinition(RuntimeScene runtimeScene)
         {
             SceneSerializer sceneSerializer = new SceneSerializer();
@@ -284,6 +355,9 @@ namespace neongine
             return sceneDefinition;
         }
 
+        /// <summary>
+        /// Get the ID of all the currently loaded (active) systems
+        /// </summary>
         private static uint[] GetLoadedSystemIDs(ISystem[] systems)
         {
             ISystem[] serializableSystems = GetSerializableSystems(systems);
@@ -296,6 +370,9 @@ namespace neongine
             return systemIDs;
         }
 
+        /// <summary>
+        /// Get the <c>SystemDatas</c> for all the provided systems
+        /// </summary>
         private static SystemData[] GetSystemDatas(SceneSerializer sceneSerializer)
         {
             ISystem[] serializableSystems = GetSerializableSystems(sceneSerializer.ReferencedSystems);
@@ -324,6 +401,9 @@ namespace neongine
             return systemDatas.ToArray();
         }
 
+        /// <summary>
+        /// Get a list of all the provided systems that have the <c>Serialize</c> attribute
+        /// </summary>
         private static ISystem[] GetSerializableSystems(IEnumerable<ISystem> gameSystems)
         {
             List<ISystem> serializableSystems = new();
@@ -341,11 +421,9 @@ namespace neongine
             return serializableSystems.ToArray();
         }
 
-        public static bool IsEntitySerializable(EntityID entity)
-        {
-            return entity.GetType().GetCustomAttribute<DoNotSerializeAttribute>() == null;
-        }
-
+        /// <summary>
+        /// Get the <c>EntityData</c> of an entity, recursively called for its children.
+        /// </summary>
         private static EntityData GetEntityData(EntityID entityID, SceneSerializer sceneSerializer)
         {
             Component[] components = entityID.GetAll(); // Get all components
@@ -379,6 +457,9 @@ namespace neongine
             return entityData;
         }
 
+        /// <summary>
+        /// Register all system referenced by this object in the <c>SceneSerializer</c>. 
+        /// </summary>
         private static void RegisterDependentSystems(object o, SceneSerializer sceneSerializer)
         {
             Type type = o.GetType();
@@ -398,6 +479,9 @@ namespace neongine
             }
         }
 
+        /// <summary>
+        /// Get all the MemberInfos of this type targetting an <c>ISystem</c>
+        /// </summary>
         private static MemberInfo[] GetDependentSystems(Type type)
 		{
             BindingFlags flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
@@ -418,6 +502,9 @@ namespace neongine
             return (fieldInfos.Concat(propertyInfos)).ToArray();
         }
 
+        /// <summary>
+        /// Get the system's value stored in the object's target member.
+        /// </summary>
         private static ISystem GetMemberSystem(object o, MemberInfo info)
         {
             if (info is FieldInfo field)
@@ -428,6 +515,9 @@ namespace neongine
             return default;;
         }
 
+        /// <summary>
+        /// Get the <c>ComponentData</c> of the provided component.
+        /// </summary>
         private static ComponentData GetComponentData(Component component, Type type)
         {
             ComponentData componentData = new ComponentData()

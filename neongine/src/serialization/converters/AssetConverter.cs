@@ -32,7 +32,7 @@ namespace neongine
             {
                 JObject o = (JObject)t;
 
-                string name = Assets.GetName(value, typeof(T));
+                string name = Assets.GetPath(value, typeof(T));
 
                 o.ReplaceAll(new JProperty("asset", name));
 
