@@ -7,6 +7,9 @@ using System.IO;
 
 namespace neongine.editor
 {
+    /// <summary>
+    /// Add the ability to save a scene using Ctrl + S keys when in Editor
+    /// </summary>
     public class EditorSaveSystem : IEditorUpdateSystem
     {
         public bool ActiveInPlayMode => true;

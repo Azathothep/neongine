@@ -274,11 +274,11 @@ namespace neongine {
 
             Vector2 correctedRelativeVelocity = GetCorrectedVelocity(datas.PenetrationDatas, relativeVelocity);
 
-            Vector2 correctedRelativeVelocityRatioed1 = correctedRelativeVelocity * ratio;
-            Vector2 correctedRelativeVelocityRatioed2 = correctedRelativeVelocity * (1 - ratio);
+            Vector2 correctedRelativeVelocity1Ratioed = correctedRelativeVelocity * ratio;
+            Vector2 correctedRelativeVelocity2Ratioed = correctedRelativeVelocity * (1 - ratio);
 
-            float correctedVelocity1Length = Vector2.Dot(- correctedRelativeVelocityRatioed1, Vector2.Normalize(velocity1));
-            float correctedVelocity2Length = Vector2.Dot(correctedRelativeVelocityRatioed2, Vector2.Normalize(velocity2));
+            float correctedVelocity1Length = Vector2.Dot(- correctedRelativeVelocity1Ratioed, Vector2.Normalize(velocity1));
+            float correctedVelocity2Length = Vector2.Dot(correctedRelativeVelocity2Ratioed, Vector2.Normalize(velocity2));
 
             Vector2 correctedVelocity1 = Vector2.Normalize(velocity1) * correctedVelocity1Length;
             Vector2 correctedVelocity2 = Vector2.Normalize(velocity2) * correctedVelocity2Length;

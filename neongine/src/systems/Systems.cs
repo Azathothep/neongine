@@ -8,8 +8,14 @@ using neongine.editor;
 
 namespace neongine
 {
+    /// <summary>
+    /// Provides a way to update, add and remove editor and game systems from the storage.
+    /// </summary>
     public static class Systems
     {
+        /// <summary>
+        /// A group of update and draw systems.
+        /// </summary>
         public class Storage {
             public SystemStorage<IUpdateSystem> Update = new();
             public SystemStorage<IDrawSystem> Draw = new();
@@ -105,6 +111,10 @@ namespace neongine
                 stoppable.OnStop();
         }
 
+        /// <summary>
+        /// Get all draw and update Game systems currently loaded
+        /// </summary>
+        /// <returns></returns>
         public static ISystem[] GetLoadedGameSystems()
         {
             List<ISystem> gameSystems = [.. GameSystems.Update.Systems];

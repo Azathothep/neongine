@@ -5,11 +5,29 @@ using neongine.editor;
 
 namespace neongine
 {
+    /// <summary>
+    /// A Neongine application, loading the editor and base systems.
+    /// </summary>
     public class NeongineApplication : Game
     {
+        /// <summary>
+        /// The application's root directory
+        /// </summary>
         public static string RootDirectory;
+
+        /// <summary>
+        /// The Graphic Device Manager for this application
+        /// </summary>
         private GraphicsDeviceManager _graphics;
+
+        /// <summary>
+        /// Required to draw anything on screen
+        /// </summary>
         private SpriteBatch _spriteBatch;
+
+        /// <summary>
+        /// The currently loaded Neongine Game
+        /// </summary>
         private IGame m_Game;
 
         public NeongineApplication(IGame game)

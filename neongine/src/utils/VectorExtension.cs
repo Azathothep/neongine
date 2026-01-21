@@ -3,6 +3,9 @@ using Microsoft.Xna.Framework;
 
 namespace neongine
 {
+    /// <summary>
+    /// Utilities to operate on and with vectors
+    /// </summary>
     public static class VectorExtension
     {
         public static Vector2 Rotate(this Vector2 v, double degrees)

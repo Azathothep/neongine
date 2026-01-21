@@ -1,13 +1,14 @@
 ﻿using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using neon;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace neongine.editor
 {
+    /// <summary>
+    /// Add the ability to move the entities using the mouse when in Editor
+    /// </summary>
     public class EditorDragSystem : IEditorUpdateSystem, IEditorDrawSystem
     {
         public bool ActiveInPlayMode => false;

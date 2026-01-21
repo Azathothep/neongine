@@ -2,10 +2,12 @@ using System;
 using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework;
 using neon;
-using Microsoft.Xna.Framework.Graphics;
 
 namespace neongine.editor
 {
+    /// <summary>
+    /// Manages the Play mode when in Editor. Saves the scene state when entering and reloads it when leaving.
+    /// </summary>
     [Order(OrderType.After, typeof(RenderingSystem))]
     public class EditorPlayModeSystem : IEditorUpdateSystem, IEditorDrawSystem
     {

@@ -6,6 +6,9 @@ using neongine.editor;
 
 namespace neongine
 {
+    /// <summary>
+    /// Draw entities with a <c>Renderer</c> component and provides utility functions to draw base shapes and text on-screen.
+    /// </summary>
     public class RenderingSystem : IEditorDrawSystem, IGameDrawSystem
     {
         public bool ActiveInPlayMode => true;

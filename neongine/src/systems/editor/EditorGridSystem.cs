@@ -5,6 +5,9 @@ using neon;
 
 namespace neongine.editor
 {
+    /// <summary>
+    /// Shows a grid when in Editor
+    /// </summary>
     [Order(OrderType.Before, typeof(RenderingSystem))]
     public class EditorGridSystem : IEditorDrawSystem
     {

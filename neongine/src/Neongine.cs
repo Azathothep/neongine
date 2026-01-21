@@ -6,8 +6,15 @@ using neongine.editor;
 
 namespace neongine
 {
+    /// <summary>
+    /// Base functionalities to start Neongine
+    /// </summary>
     public static class Neongine
     {
+        /// <summary>
+        /// Initializes the base underlying systems
+        /// </summary>
+        /// <param name="contentManager"></param>
         public static void Initialize(ContentManager contentManager)
         {
             Neon.Architecture architecture = Neon.Initialize();
@@ -19,6 +26,9 @@ namespace neongine
             Serializer.SetSerializer(new NewtonsoftJsonSerializer());
         }
 
+        /// <summary>
+        /// Load the most common game systems
+        /// </summary>
         public static void LoadCommonSystems(GameWindow gameWindow, SpriteBatch spriteBatch)
         {
             EntityID cameraEntity = Neongine.Entity();
@@ -36,6 +46,9 @@ namespace neongine
             Systems.Add(new AngleVelocitySystem());
         }
 
+        /// <summary>
+        /// Load the collision-related systems
+        /// </summary>
         public static void LoadCollisionSystems(SpriteBatch spriteBatch) {
             QuadtreeSpacePartitioner qsp = new QuadtreeSpacePartitioner(spriteBatch);
             
@@ -48,6 +61,9 @@ namespace neongine
             Systems.Add(new EditorColliderVisualizer());
         }
 
+        /// <summary>
+        /// Load the editor systems
+        /// </summary>
         public static void LoadEditorSystems()
         {
             Systems.Add(new EditorDragSystem(0.05f));
@@ -57,6 +73,9 @@ namespace neongine
             Systems.Add(new EditorPlayModeSystem());
         }
 
+        /// <summary>
+        /// Create a new entity with a <c>Name</c> and a <c>Transform</c> component, initialized to the provided values
+        /// </summary>
         public static EntityID Entity(string name = "new_entity", Vector3 position = default, float rotation = 0.0f, Vector2 scale = default)
         {
             EntityID entityID = Entities.GetID();

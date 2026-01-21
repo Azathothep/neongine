@@ -1,6 +1,9 @@
 using System;
 
 namespace neongine {
+    /// <summary>
+    /// Stores values representing a rectangle
+    /// </summary>
     [Serializable]
     public struct Rect {
         [Serialize]

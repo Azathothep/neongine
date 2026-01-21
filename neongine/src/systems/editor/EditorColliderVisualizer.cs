@@ -6,6 +6,9 @@ using neon;
 
 namespace neongine.editor
 {
+    /// <summary>
+    /// Shows the colliders and their collision / trigger state when in Editor
+    /// </summary>
     [Order(OrderType.After, typeof(RenderingSystem))]
     public class EditorColliderVisualizer : IEditorUpdateSystem, IEditorDrawSystem
     {

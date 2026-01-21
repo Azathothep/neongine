@@ -6,6 +6,9 @@ using System.Threading.Tasks;
 
 namespace neongine
 {
+    /// <summary>
+    /// Utilities for mathematical operations
+    /// </summary>
     public static class Mathf
     {
         public static float Clamp(float value, float min, float max)

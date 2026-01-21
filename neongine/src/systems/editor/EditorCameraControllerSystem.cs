@@ -5,6 +5,10 @@ using neon;
 
 namespace neongine.editor
 {
+    /// <summary>
+    /// Controls the camera when in Editor.
+    /// Use Arrow keys to move and I/O keys to zoom in / out.
+    /// </summary>
     public class EditorCameraControllerSystem : IEditorUpdateSystem
     {
         public bool ActiveInPlayMode => false;

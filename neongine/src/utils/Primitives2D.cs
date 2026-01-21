@@ -5,8 +5,10 @@ using Microsoft.Xna.Framework.Graphics;
 
 namespace MonoGame
 {
-    // This code has been taken from https://github.com/DoogeJ/MonoGame.Primitives2D
-
+    /// <summary>
+    /// This code has been taken from https://github.com/DoogeJ/MonoGame.Primitives2D.
+    /// Provides an easy way to draw points, lines and base shapes in MonoGame.
+    /// </summary>
     public static class Primitives2D
     {
 

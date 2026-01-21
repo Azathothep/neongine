@@ -31,10 +31,6 @@ namespace neongine
 
         public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
         {
-            /*{
-                component = FormatterServices.GetUninitializedObject(objectType);
-            }*/
-
             object system = m_Serializer.Deserialize(reader, objectType);
 
             return system;

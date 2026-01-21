@@ -2,15 +2,28 @@ using System;
 using Microsoft.Xna.Framework;
 
 namespace neongine {
+    /// <summary>
+    /// Stores a shape, from basic circle to any kind of polygon
+    /// </summary>
     [DoNotSerialize]
     public class Shape : IEquatable<Shape>
     {
         [Serialize]
         private Vector2[] m_Vertices;
+
+        /// <summary>
+        /// The shape vertices
+        /// </summary>
         public Vector2[] Vertices => m_Vertices;
 
+        /// <summary>
+        /// False if the shape is a circle
+        /// </summary>
         public bool IsPolygon => m_Vertices.Length > 2;
 
+        /// <summary>
+        /// Circle radius, if applicable
+        /// </summary>
         public float Radius => IsPolygon ? 0.0f : m_Vertices[1].X;
 
         public Shape(Vector2[] vertices) {
@@ -37,6 +50,9 @@ namespace neongine {
             }
         }
 
+        /// <summary>
+        /// A shape based on the provided one, but rotated and scaled according to the given parameters
+        /// </summary>
         public Shape(Shape baseShape, float rotation, Vector2 scale) {
             double rad = float.DegreesToRadians(-rotation);
             float cos = (float)Math.Cos(rad);

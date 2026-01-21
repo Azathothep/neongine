@@ -1,13 +1,13 @@
 ﻿using Microsoft.Xna.Framework;
-using neongine;
-using System.Collections;
 using System.Collections.Generic;
 using neon;
 using System;
-using System.Diagnostics;
 
 namespace neongine
 {
+    /// <summary>
+    /// Automatically moves entities with a <c>Velocity</c> component
+    /// </summary>
     [Order(OrderType.After, typeof(CollisionSystem))]
     public class VelocitySystem : IGameUpdateSystem
     {

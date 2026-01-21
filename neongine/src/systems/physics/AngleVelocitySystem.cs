@@ -7,6 +7,9 @@ using System.Threading.Tasks;
 
 namespace neongine
 {
+    /// <summary>
+    /// Automatically rotates entities with an <c>AngleVelocity</c> component
+    /// </summary>
     [Order(OrderType.After, typeof(CollisionSystem))]
     public class AngleVelocitySystem : IGameUpdateSystem
     {
