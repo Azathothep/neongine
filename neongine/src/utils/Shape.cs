@@ -1,6 +1,5 @@
 using System;
 using Microsoft.Xna.Framework;
-using neon;
 
 namespace neongine {
     [DoNotSerialize]

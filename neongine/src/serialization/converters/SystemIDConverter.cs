@@ -2,14 +2,14 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using neon;
-using System.Diagnostics;
 
 namespace neongine
 {
+	/// <summary>
+	/// Converts a system reference into json by storing their ID
+	/// </summary>
 	public class SystemIDConverter : JsonConverter
 	{
-        public static string IDKey = "id";
-
 		public override bool CanConvert(Type objectType)
 		{
 			return typeof(ISystem).IsAssignableFrom(objectType);
@@ -28,7 +28,7 @@ namespace neongine
 
 			ISystem system = (ISystem)value;
 
-			o.Add(new JProperty(SystemIDConverter.IDKey, system.GetHashCode()));
+			o.Add(new JProperty(NewtonsoftJsonSerializer.GUID, system.GetHashCode()));
 
             o.WriteTo(writer);
 		}

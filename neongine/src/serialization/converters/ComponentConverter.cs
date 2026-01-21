@@ -1,15 +1,16 @@
-﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using System;
-using neon;
-using Newtonsoft.Json.Serialization;
+﻿using System;
 using System.Reflection;
-using Microsoft.Xna.Framework.Graphics;
-using System.Diagnostics;
 using System.Linq;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using Newtonsoft.Json.Serialization;
+using neon;
 
 namespace neongine
 {
+    /// <summary>
+    /// Converts components into json or into objects from json.
+    /// </summary>
     public class ComponentConverter : JsonConverter
     {
         private static JsonSerializer m_Serializer = JsonSerializer.Create(new JsonSerializerSettings()

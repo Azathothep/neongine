@@ -1,23 +1,28 @@
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
-using System.Diagnostics;
-using neongine.editor;
 using neon;
 
 namespace neongine
 {
-    public class ExampleGame : neongine.IGame
+    // Add this into your Program.cs to run the game using Neongine :
+    //      using var application = new neongine.NeongineApplication(new ExampleGame());
+    //      application.Run();
+
+    public class ExampleGame : IGame
     {
         public int WindowWidth => 800;
         public int WindowHeight => 480;
 
         public void EditorLoad()
         {
-            
+            // Put here all your editor-related content. This won't be called in the published application.
         }
         
         public void GameLoad()
         {
+            // Put here all your game-related content.
+
+            // Example :
+
             EntityID entity = Neongine.Entity("first_entity", Vector3.One, 4.5f, Vector2.One * 1.3f);
 
             entity.Add<Velocity>()

@@ -6,6 +6,9 @@ using System.Linq;
 
 namespace neongine
 {
+	/// <summary>
+	/// Converts component references to json by only storing their ID
+	/// </summary>
 	public class ComponentIDConverter : JsonConverter
 	{
 		public override bool CanConvert(Type objectType)
@@ -17,10 +20,6 @@ namespace neongine
 
 		public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
 		{
-/*            JToken token = JToken.Load(reader);
-			IComponent component = (IComponent)token.ToObject(objectType);
-            return component;*/
-
             throw new NotImplementedException();
         }
 
@@ -30,7 +29,7 @@ namespace neongine
 
 			Component component = (Component)value;
 
-			o.Add(new JProperty(EntityIDConverter.IDKey, (UInt32)(component.EntityID)));
+			o.Add(new JProperty(NewtonsoftJsonSerializer.GUID, (UInt32)(component.EntityID)));
 
             o.WriteTo(writer);
 		}

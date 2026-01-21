@@ -5,10 +5,11 @@ using neon;
 
 namespace neongine
 {
+	/// <summary>
+	/// Converts entity references to json by only storing their ID
+	/// </summary>
 	public class EntityIDConverter : JsonConverter
 	{
-		public static string IDKey = "id";
-
 		public override bool CanConvert(Type objectType)
 		{
 			return typeof(EntityID).IsAssignableFrom(objectType);
@@ -27,7 +28,7 @@ namespace neongine
 
 			EntityID entity = (EntityID)value;
 
-			o.Add(new JProperty(EntityIDConverter.IDKey, (UInt32)entity));
+			o.Add(new JProperty(NewtonsoftJsonSerializer.GUID, (UInt32)entity));
 
 			o.WriteTo(writer);
 		}

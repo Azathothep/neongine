@@ -12,6 +12,10 @@ using System.Reflection;
 
 namespace neongine
 {
+	/// <summary>
+	/// Provides the list of all serializable members of a specific type.
+	/// All fields and properties, public or private, are non serialized by default. They must be decorated with the [Serialize] attribute to be serialized.
+	/// </summary>
 	public class SerializeContractResolver : DefaultContractResolver
 	{
 		public static readonly SerializeContractResolver Instance = new SerializeContractResolver();

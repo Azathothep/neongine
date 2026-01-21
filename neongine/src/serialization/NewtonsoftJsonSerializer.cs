@@ -7,8 +7,13 @@ using System.Linq;
 
 namespace neongine
 {
+    /// <summary>
+    /// Implements <c>ISerializer</c> using Newtonsoft.Json
+    /// </summary>
     public class NewtonsoftJsonSerializer : ISerializer
     {
+        public static string GUID = "id";
+
         private JsonSerializerSettings ComponentSerializerSettings = new JsonSerializerSettings()
         {
             ContractResolver = SerializeContractResolver.Instance,
@@ -68,6 +73,9 @@ namespace neongine
             return JsonConvert.DeserializeObject<SceneDefinition>(serializedData, m_SceneSerializerSettings);
         }
 
+        /// <summary>
+        /// Get the value of the taget member in the provided serialized object
+        /// </summary>
         public string GetMemberValue(string serializedData, string memberName)
         {
             JObject obj = JObject.Parse(serializedData);
@@ -79,8 +87,7 @@ namespace neongine
                 return null;
             }
 
-            //TODO: set global Key / GUID for any object, instead of EntityIDConverter or SystemIDConverter
-            JToken idToken = token[EntityIDConverter.IDKey];
+            JToken idToken = token[NewtonsoftJsonSerializer.GUID];
             if (token == null)
             {
                 Debug.WriteLine($"idToken for {memberName} not found in {serializedData}");

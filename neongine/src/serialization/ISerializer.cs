@@ -1,12 +1,11 @@
 ﻿using neon;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace neongine
 {
+    /// <summary>
+    /// Interface for implementing a serializer
+    /// </summary>
     public interface ISerializer
     {
         public string SerializeScene(SceneDefinition sceneDefinition);
@@ -19,6 +18,9 @@ namespace neongine
         public string SerializeSystem<T>(T system) where T : ISystem;
         public ISystem DeserializeSystem(string serializedData, Type systemType);
 
+        /// <summary>
+        /// Get the value of the taget member in the provided serialized object
+        /// </summary>
         public string GetMemberValue(string serializedData, string memberName);
     }
 }

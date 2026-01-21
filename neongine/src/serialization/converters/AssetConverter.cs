@@ -4,6 +4,10 @@ using System;
 
 namespace neongine
 {
+    /// <summary>
+    /// Converts assets into json or into objects from json.
+    /// Assets are serialized by their path.
+    /// </summary>
     public class AssetConverter<T> : JsonConverter
     {
         public override bool CanConvert(Type objectType)

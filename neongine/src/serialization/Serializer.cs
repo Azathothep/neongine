@@ -5,6 +5,9 @@ using System.Diagnostics;
 
 namespace neongine
 {
+    /// <summary>
+    /// Provides a way to interact with the underlying serializer implementation
+    /// </summary>
     public static class Serializer
     {
 
@@ -24,6 +27,9 @@ namespace neongine
 
         public static ISystem DeserializeSystem(string serializedData, Type systemType) => m_Serializer.DeserializeSystem(serializedData, systemType);
 
+        /// <summary>
+        /// Get the value of the taget member in the provided serialized object
+        /// </summary>
         public static string GetMemberValue(string serializedData, string memberName) => m_Serializer.GetMemberValue(serializedData, memberName);
     }
 }

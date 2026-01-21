@@ -8,6 +8,9 @@ using System.Linq;
 
 namespace neongine
 {
+    /// <summary>
+    /// Converts a system into json and back into object from json
+    /// </summary>
     public class SystemConverter : JsonConverter
     {
         private static JsonSerializer m_Serializer = JsonSerializer.Create(new JsonSerializerSettings()

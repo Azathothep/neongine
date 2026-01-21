@@ -4,6 +4,9 @@ using System;
 
 namespace neongine
 {
+    /// <summary>
+    /// Converts a SceneDefinition to json and back into object from json
+    /// </summary>
     public class SceneDefinitionConverter : JsonConverter
     {
         public override bool CanConvert(Type objectType)
