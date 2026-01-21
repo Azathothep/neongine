@@ -5,11 +5,28 @@ using Microsoft.Xna.Framework;
 using neon;
 
 namespace neongine {
+    /// <summary>
+    /// Implements <c>ICollisionResolver</c> to resolve collisions by operating on the entitie's <c>Velocity</c>
+    /// </summary>
     public class VelocityCollisionResolver : ICollisionResolver
     {
+        /// <summary>
+        /// Stores collision resolution datas for entity pairs in which only one entity moves
+        /// </summary>
         private struct OneMovementData {
+            /// <summary>
+            /// Details on the collision penetration
+            /// </summary>
             public Penetration[] PenetrationDatas;
+
+            /// <summary>
+            /// The entity index
+            /// </summary>
             public int Index;
+
+            /// <summary>
+            /// The final velocity correction to apply to the entity
+            /// </summary>
             public Vector2 Velocity;
 
             public OneMovementData(Collision collision, int index, Vector2 velocity) {
@@ -19,9 +36,23 @@ namespace neongine {
             }
         }
 
+        /// <summary>
+        /// Stores collision resolution datas for entity pairs in which both entities move
+        /// </summary>
         private struct TwoMovementsData {
+            /// <summary>
+            /// Details on the collision penetration
+            /// </summary>
             public Penetration[] PenetrationDatas;
+
+            /// <summary>
+            /// The entities indices
+            /// </summary>
             public (int, int) Indices;
+
+            /// <summary>
+            /// The final velocity corrections to apply to the entities
+            /// </summary>
             public (Vector2, Vector2) Velocities;
             public TwoMovementsData(Collision collision, int index1, Vector2 velocity1, int index2, Vector2 velocity2) {
                 PenetrationDatas = collision.Penetration;
@@ -30,8 +61,18 @@ namespace neongine {
             }
         }
 
+        /// <summary>
+        /// Stores corrections informations relative to a single collision situation for one or two entities
+        /// </summary>
         private class Solution {
+            /// <summary>
+            /// The affected entities
+            /// </summary>
             public int[] Entities;
+
+            /// <summary>
+            /// The corrections related to the solution entities
+            /// </summary>
             public Correction[] Corrections;
 
             public Solution(int[] entities, Correction[] corrections) {
@@ -40,6 +81,10 @@ namespace neongine {
             }
         }
 
+        /// <summary>
+        /// Represent the velocity correction to apply to resolve a single collision situation.
+        /// This is maybe not the one that will be applied : if an entity collides with two entities at the same time, we need to prioritize the biggest correction.
+        /// </summary>
         private struct Correction {
             public Vector2 Velocity;
             public float Length;
@@ -48,9 +93,14 @@ namespace neongine {
                 Length = length;
             }
 
-            public bool HasPriorityAgainst(Correction other) => this.Length < other.Length;
+            public bool HasPriorityAgainst(Correction other) => this.Length < other.Length; // An inferior length represents a bigger correction (= the velocity will be reduced the most)
         }
 
+        /// <summary>
+        /// Resolve collisions using the provided <c>CollisionData</c> array.
+        /// The <c>CollisionSystem</c> use SOA (Structure of Arrays) approach in storing datas.
+        /// The array required as argument respect this structure. Thus, you can view the array indices as IDs : all the elements located at the same index in any array are related to the same entity.
+        /// </summary>
         public void Resolve(CollisionData[] collisionDatas, EntityID[] entityIDs, Transform[] transforms, Vector2[] positions, Velocity[] velocities, bool[] isStatic, float deltaTime)
         {
             List<OneMovementData> oneMovementResolutions;
@@ -68,6 +118,9 @@ namespace neongine {
             }
         }
 
+        /// <summary>
+        /// Divide the <c>CollisionData</c> into <c>OneMovementData</c> (only one entity moves) and <c>TwoMovementsData</c> (both entities move) instructions.
+        /// </summary>
         private void FillResolutionDatas(CollisionData[] collisionDatas, EntityID[] entityIDs, Velocity[] velocities, bool[] isStatic, float deltaTime, out List<OneMovementData> oneMovementResolutions, out List<TwoMovementsData> twoMovementsResolutions) {
             oneMovementResolutions = new();
             twoMovementsResolutions = new();
@@ -94,6 +147,12 @@ namespace neongine {
             }
         }
 
+        /// <summary>
+        /// Solve the collisions and get a Dictionary with :
+        /// - an entity as key
+        /// - a list of all the Solutions that act on this entity, along with the indice of the entity in the solution's <c>Entities</c> field
+        /// </summary>
+        /// <returns></returns>
         private Dictionary<int, List<(Solution, int)>> GetSolutions(List<OneMovementData> oneMovementResolutions, List<TwoMovementsData> twoMovementsResolutions) {
             Dictionary<int, List<(Solution, int)>> entityToSolutions = new();
             
@@ -120,6 +179,9 @@ namespace neongine {
             return entityToSolutions;
         }
 
+        /// <summary>
+        /// Prioritize the corrections to only get one correction per entity.
+        /// </summary>
         private Dictionary<int, Correction> GetSingleCorrections(Dictionary<int, List<(Solution, int)>> entityToSolutions) {
             Dictionary<int, Correction> entityToCorrections = new();
             HashSet<int> blockedEntities = new();
@@ -134,7 +196,7 @@ namespace neongine {
                     continue;
                 
                 (Solution solution, int correctionIndex) = entityToSolution.Value[0];
-                if (entityToSolution.Value.Count() == 1) { // if hit only 1 entity, moving or not : include
+                if (entityToSolution.Value.Count() == 1) { // if hit only one entity (moving or not) : automatically include it in the dictionary (no priorization to do)
                     entityToCorrections.Add(id, solution.Corrections[correctionIndex]);
                     continue;
                 }
@@ -145,7 +207,7 @@ namespace neongine {
                 for (int i = 0; i < entityToSolution.Value.Count(); i++) {
                     (Solution evaluatedSolution, int evaluatedCorrectionIndex) = entityToSolution.Value[i];
 
-                    if (evaluatedSolution.Entities.Length > 1) { // if collision involves another moving entity
+                    if (evaluatedSolution.Entities.Length > 1) { // if collision involves another moving entity, "lock it" to avoid evaluating the correction multiple times and end with an infinite loop
                         hitMultipleEntitiesWithAtLeastOneMoving = true;
                         BlockEntity(id);
                         break;
@@ -186,11 +248,17 @@ namespace neongine {
             return entityToCorrections;
         }
 
+        /// <summary>
+        /// Resolve a collision situation with only one entity moving 
+        /// </summary>
         private Correction Solve(OneMovementData datas) {
             Vector2 correctedVelocity = GetCorrectedVelocity(datas.PenetrationDatas, datas.Velocity);
             return new Correction(correctedVelocity, correctedVelocity.Length());
         }
 
+        /// <summary>
+        /// Resolve a collision situation with both entities moving
+        /// </summary>
         private (Correction, Correction) Solve(TwoMovementsData datas) {            
             (Vector2 velocity1, Vector2 velocity2) = datas.Velocities;
             
@@ -218,6 +286,9 @@ namespace neongine {
             return (new Correction(correctedVelocity1, correctedVelocity1Length), new Correction(correctedVelocity2, correctedVelocity2Length));
         }
 
+        /// <summary>
+        /// Get the velocity correction to apply to stop this entity right before it overlaps with the other one
+        /// </summary>
         private Vector2 GetCorrectedVelocity(Penetration[] penetrationDatas, Vector2 velocity) {
             float biggestProjectedVelocityOnPenetration = 1.0f;
 

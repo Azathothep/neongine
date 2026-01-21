@@ -3,8 +3,14 @@ using System.Diagnostics;
 using Microsoft.Xna.Framework;
 
 namespace neongine {
+    /// <summary>
+    /// Utility functions for detecting collisions between circles
+    /// </summary>
     public static class RadiusCollision
     {
+        /// <summary>
+        /// Returns true if the circle at position <c>p1</c> of radius <c>radius1</c> is overlapping with the circle at position <c>p2</c> of radius <c>radius2</c>
+        /// </summary>
         public static bool Collide(Vector2 p1, float radius1, Vector2 p2, float radius2)
         {
             Vector2 difference = p1 - p2;

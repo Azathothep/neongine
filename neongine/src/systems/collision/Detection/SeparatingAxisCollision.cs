@@ -5,6 +5,9 @@ using System.Linq;
 using Microsoft.Xna.Framework;
 
 namespace neongine {
+    /// <summary>
+    /// Utility for using the Separating Axis Theorem
+    /// </summary>
     public static class SeparatingAxisCollision
     {
         private static float PRECISION = 0.01f;
@@ -132,6 +135,9 @@ namespace neongine {
             return false;
         }
 
+        /// <summary>
+        /// Get the min and max values of the projected shape along the provided axis
+        /// </summary>
         private static (float, float) GetMinMax(Vector2 position, Shape shape, Vector2 axis) {
             float minValue = float.MaxValue;
             float maxValue = float.MinValue;
@@ -149,6 +155,9 @@ namespace neongine {
             return (minValue, maxValue);
         }
 
+        /// <summary>
+        /// Get a collection of both shape's normals
+        /// </summary>
         private static Vector2[] GetNormals(Shape shape1, Shape shape2) {
             Vector2[] normals1 = GetNormals(shape1);
             Vector2[] normals2 = GetNormals(shape2);
@@ -164,6 +173,9 @@ namespace neongine {
             return normals.ToArray();
         }
 
+        /// <summary>
+        /// Get a collection of the shape's normals
+        /// </summary>
         private static Vector2[] GetNormals(Shape shape) {
             int length = shape.Vertices.Length;
 

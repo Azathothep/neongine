@@ -8,24 +8,32 @@ using neon;
 
 namespace neongine
 {
+    /// <summary>
+    /// Implements ICollisionDetector to detect collisions using the Separating Axis Algorithm
+    /// </summary>
     public class SATCollisionDetector : ICollisionDetector
     {
+        /// <summary>
+        /// Temporary datas to store informations about detected collisions
+        /// </summary>
         private struct DetectedCollisions() {
+            /// <summary>
+            /// The indices of the Entities in the provided ids array
+            /// </summary>
             public (int, int)[] CollisionIndices;
+
+            /// <summary>
+            /// The collision datas related to each <c>CollisionIndice</c>
+            /// </summary>
             public Collision[] Collisions;
         }
 
-        // public CollisionDetectionData Detect(IEnumerable<(EntityID, EntityID)> partition, EntityID[] ids, Vector2[] positions, Collider[] colliders, Shape[] shapes, Bounds[] bounds)
-        // {
-        //     (int, int)[] crossingBounds = BoundDetections(partition, ids, positions, bounds);
-
-        //     DetectedCollisions detections = ShapeDetections(crossingBounds, positions, colliders, shapes);
-
-        //     CollisionDetectionData datas = Convert(detections, ids);
-
-        //     return datas;
-        // }
-
+        /// <summary>
+        /// Detect collisions and fill a <c>CollisionData</c> array with the validated collisions.
+        /// The first argument gives all the pairs we need to check in detecting collisions. This was filled by a <c>IPartitionSystem</c> previously called by the <c>CollisionSystem</c>.
+        /// The <c>CollisionSystem</c> use SOA (Structure of Arrays) approach in storing datas.
+        /// The array required as argument respect this structure. Thus, you can view the array indices as IDs : all the elements located at the same index in any array are related to the same entity.
+        /// </summary>
         public void Detect(IEnumerable<(EntityID, EntityID)> partition, EntityID[] ids, Vector2[] positions, Collider[] colliders, Shape[] shapes, Bounds[] bounds, out CollisionData[] collisionData)
         {
             (int, int)[] crossingBounds = BoundDetections(partition, ids, positions, bounds);
@@ -35,6 +43,12 @@ namespace neongine
             collisionData = Convert(detections, ids);
         }
 
+        /// <summary>
+        /// Detect collisions and fill array of tuples with the validated collisions.
+        /// The first argument gives all the pairs we need to check in detecting collisions. This was filled by a <c>IPartitionSystem</c> previously called by the <c>CollisionSystem</c>.
+        /// The <c>CollisionSystem</c> use SOA (Structure of Arrays) approach in storing datas.
+        /// The array required as argument respect this structure. Thus, you can view the array indices as IDs : all the elements located at the same index in any array are related to the same entity.
+        /// </summary>
         public (EntityID, EntityID)[] Detect(IEnumerable<(EntityID, EntityID)> partition, EntityID[] ids, Vector2[] positions, Collider[] colliders, Shape[] shapes, Bounds[] bounds)
         {
             (int, int)[] crossingBounds = BoundDetections(partition, ids, positions, bounds);
@@ -46,6 +60,9 @@ namespace neongine
             return crossingEntities;
         }
 
+        /// <summary>
+        /// Returns an array of tuples with every entity pairs that have overlapping bounds. This is a first filter before proper shape overlap detection.
+        /// </summary>
         private (int, int)[] BoundDetections(IEnumerable<(EntityID, EntityID)> partition, EntityID[] ids, Vector2[] positions, Bounds[] bounds) {
             List<(int, int)> partitionIDs = new List<(int, int)>(partition.Count());
 
@@ -67,6 +84,9 @@ namespace neongine
             return crossingBounds.ToArray();
         }
 
+        /// <summary>
+        /// Fill a <c>DetectedCollisions</c> structure with the detected shapes overlap using SAT algorithm.
+        /// </summary>
         private void ShapeDetections((int, int)[] indices, Vector2[] positions, Collider[] colliders, Shape[] shapes, out DetectedCollisions detectedCollisions) {
             List<(int, int)> collisionIndices = new();
             List<Collision> collisionList = new();
@@ -84,6 +104,9 @@ namespace neongine
             };
         }
 
+        /// <summary>
+        /// Fill an array of tuples with the detected shapes overlap using SAT algorithm.
+        /// </summary>
         private void ShapeDetections((int, int)[] indices, Vector2[] positions, Collider[] colliders, Shape[] shapes, out (int, int)[] detectedTriggers)
         {
             List<(int, int)> detectedTriggersList = new();
@@ -97,6 +120,9 @@ namespace neongine
             detectedTriggers = detectedTriggersList.ToArray();
         }
 
+        /// <summary>
+        /// Evaluate collision between two colliders depending on their shape type
+        /// </summary>
         private bool EvaluateCollision(Vector2 p1, Collider c1, Shape s1, Vector2 p2, Collider c2, Shape s2) {
             if (!s1.IsPolygon && !s2.IsPolygon)
                 return RadiusCollision.Collide(p1, s1.Radius, p2, s2.Radius);
@@ -112,6 +138,9 @@ namespace neongine
             return false;
         }
 
+        /// <summary>
+        /// Evaluate collision between two colliders depending on their shape type and fill a <c>Collision</c> object if applicable,
+        /// </summary>
         private bool EvaluateCollision(Vector2 p1, Collider c1, Shape s1, Vector2 p2, Collider c2, Shape s2, out Collision collision) {
             if (!s1.IsPolygon && !s2.IsPolygon)
                 return RadiusCollision.Collide(p1, s1.Radius, p2, s2.Radius, out collision);
@@ -128,6 +157,9 @@ namespace neongine
             return false;
         }
 
+        /// <summary>
+        /// Convert a <c>DetectedCollisions</c> structure into a <c>CollisionData</c> array
+        /// </summary>
         private CollisionData[] Convert(DetectedCollisions shapeDatas, EntityID[] ids) {
             CollisionData[] collisionData = new CollisionData[shapeDatas.CollisionIndices.Count()];
 
@@ -141,6 +173,9 @@ namespace neongine
             return collisionData;
         }
 
+        /// <summary>
+        /// Convert a <c>DetectedCollisions</c> structure into an array of EntityID tuples
+        /// </summary>
         private (EntityID, EntityID)[] Convert((int, int)[] crossingDatas, EntityID[] ids)
         {
             (EntityID, EntityID)[] triggers = new (EntityID, EntityID)[crossingDatas.Length];

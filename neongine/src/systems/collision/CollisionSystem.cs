@@ -6,18 +6,42 @@ using System.Linq;
 
 namespace neongine
 {
-    public struct CollisionData {
-        public (EntityID, EntityID) Entities;
-        public Collision Collision;
-    }
-
+    /// <summary>
+    /// Detect and solve collisions for all entities with a Collider.
+    /// Entities with an AngleVelocity component are not supported and won't be evaluated
+    /// </summary>
     public class CollisionSystem : IGameUpdateSystem
     {
         public bool ActiveInPlayMode => true;
 
         private static CollisionSystem instance;
 
+#region events
+        private Dictionary<EntityID, List<Action<EntityID, Collision>>> m_OnColliderEnter = new();
+        private Dictionary<EntityID, List<Action<EntityID>>> m_OnColliderExit = new();
+        private Dictionary<EntityID, List<Action<EntityID>>> m_OnTriggerEnter = new();
+        private Dictionary<EntityID, List<Action<EntityID>>> m_OnTriggerExit = new();
+
+        public static void OnColliderEnter(EntityID id, Action<EntityID, Collision> action) => SubscribeEvent(instance.m_OnColliderEnter, id, action);
+        public static void OnColliderExit(EntityID id, Action<EntityID> action) => SubscribeEvent(instance.m_OnColliderExit, id, action);
+        public static void OnTriggerEnter(EntityID id, Action<EntityID> action) => SubscribeEvent(instance.m_OnTriggerEnter, id, action);
+        public static void OnTriggerExit(EntityID id, Action<EntityID> action) => SubscribeEvent(instance.m_OnTriggerExit, id, action);
+        
+        private static void SubscribeEvent<T>(Dictionary<EntityID, List<T>> dictionary, EntityID id, T action) {
+            if (!dictionary.TryGetValue(id, out List<T> actions)) {
+                actions = new List<T>();
+                dictionary.Add(id, actions);
+            }
+
+            actions.Add(action);
+        }
+#endregion
+
 #region definitions
+        /// <summary>
+        /// The <c>CollisionSystem</c> use SOA (Structure of Arrays) approach in storing datas.
+        /// Thus, you can view the array indices as IDs : all the elements located at the same index in any array are related to the same entity.
+        /// </summary>
         private struct QueryResultSOA {
             public int Length;
             public EntityID[] IDs;
@@ -46,6 +70,9 @@ namespace neongine
             }
         }
 
+        /// <summary>
+        /// Stores collision informations for one frame, queryable from outside.
+        /// </summary>
         private struct FrameDataStorage {
             public Dictionary<(EntityID, EntityID), Collision> CollisionPairs = new();
             public Dictionary<EntityID, List<(EntityID, Collision)>> EntityToCollisions = new();
@@ -56,37 +83,29 @@ namespace neongine
         }
 #endregion
 
+        private FrameDataStorage m_Storage = new();
+
         private Query<Transform, Collider, Velocity, IsStatic> m_Query = new(
             [
                 new QueryFilter<Velocity>(FilterTerm.MightHave),
                 new QueryFilter<IsStatic>(FilterTerm.MightHave)
             ]);
+            
 
+        /// <summary>
+        /// System used to partition space and group potentially collidable entities
+        /// </summary>
         private ISpacePartitioner m_SpacePartitioner;
+
+        /// <summary>
+        /// System used to detect overlapping shapes
+        /// </summary>
         private ICollisionDetector m_CollisionDetector;
+
+        /// <summary>
+        /// System used to resolve the detected collision situations
+        /// </summary>
         private ICollisionResolver m_CollisionResolver;
-        private FrameDataStorage m_Storage = new();
-
-#region events
-        private Dictionary<EntityID, List<Action<EntityID, Collision>>> m_OnColliderEnter = new();
-        private Dictionary<EntityID, List<Action<EntityID>>> m_OnColliderExit = new();
-        private Dictionary<EntityID, List<Action<EntityID>>> m_OnTriggerEnter = new();
-        private Dictionary<EntityID, List<Action<EntityID>>> m_OnTriggerExit = new();
-
-        public static void OnColliderEnter(EntityID id, Action<EntityID, Collision> action) => SubscribeEvent(instance.m_OnColliderEnter, id, action);
-        public static void OnColliderExit(EntityID id, Action<EntityID> action) => SubscribeEvent(instance.m_OnColliderExit, id, action);
-        public static void OnTriggerEnter(EntityID id, Action<EntityID> action) => SubscribeEvent(instance.m_OnTriggerEnter, id, action);
-        public static void OnTriggerExit(EntityID id, Action<EntityID> action) => SubscribeEvent(instance.m_OnTriggerExit, id, action);
-        
-        private static void SubscribeEvent<T>(Dictionary<EntityID, List<T>> dictionary, EntityID id, T action) {
-            if (!dictionary.TryGetValue(id, out List<T> actions)) {
-                actions = new List<T>();
-                dictionary.Add(id, actions);
-            }
-
-            actions.Add(action);
-        }
-#endregion
 
         public CollisionSystem(ISpacePartitioner spacePartitioner, ICollisionDetector collisionDetector, ICollisionResolver collisionResolver)
         {
@@ -99,31 +118,43 @@ namespace neongine
 
         public void Update(TimeSpan timeSpan)
         {
+            // Get all the entities with a collider and query some other components along the way
             IEnumerable<(EntityID, Transform, Collider, Velocity, IsStatic)> queryResult = QueryBuilder.Get(m_Query, QueryType.Cached, QueryResultMode.Safe);
 
+            // Convert the returned enumerator into a QueryResultSOA structure, more portable between the different systems
             QueryResultSOA query = Convert(queryResult, (float)timeSpan.TotalSeconds);
 
+            // Update the collider's Shapes (if they have been moved or rotated since previous frame)
             for (int i = 0; i < query.Length; i++) {
                 query.Colliders[i].UpdateShape(query.Rotations[i], query.Scales[i]);
             }
 
+            // Partition the space and get a enumerator going through all the potential collision pairs
             IEnumerable<(EntityID, EntityID)> partition = m_SpacePartitioner.Partition(query.IDs, query.Positions, query.Bounds);
 
+            // Divide the entity pairs between solid and non-solid collisions (triggers)
             Separate(partition, query.IDs, query.Colliders, out (EntityID, EntityID)[] collisionPartition, out (EntityID, EntityID)[] triggerPartition);
 
+            // First, detect and resolve the collisions between only the collider pairs... 
             m_CollisionDetector.Detect(collisionPartition, query.IDs, query.Positions, query.Colliders, query.Shapes, query.Bounds, out CollisionData[] collisionData);
 
             m_CollisionResolver.Resolve(collisionData, query.IDs, query.Transforms, query.Positions, query.Velocities, query.IsStatic, (float)timeSpan.TotalSeconds);
 
+            // Then, detect the trigger pairs (the collision resolution may have moved some of the entities along the way, and we want to take that into account or we would have detection errors)
             (EntityID, EntityID)[] triggerData = m_CollisionDetector.Detect(triggerPartition, query.IDs, query.Positions, query.Colliders, query.Shapes, query.Bounds);
 
+            // Convert the collision and trigger datas into a storable format
             FrameDataStorage currentStorage = Convert(collisionData, triggerData);
 
+            // Trigger collision enter / exit and trigger enter / exit events
             TriggerEvents(currentStorage);
 
             m_Storage = currentStorage;
         }
 
+        /// <summary>
+        /// Convert the provided enumerator into a QueryResultSOA structure, more portable between the different systems
+        /// </summary>
         private QueryResultSOA Convert(IEnumerable<(EntityID, Transform, Collider, Velocity, IsStatic)> queryResult, float deltaTime) {
             int count = queryResult.Count();
 
@@ -148,6 +179,9 @@ namespace neongine
             return query;
         }
 
+        /// <summary>
+        /// Divide the provided entity pairs between solid and non-solid collisions (triggers)
+        /// </summary>
         private void Separate(IEnumerable<(EntityID, EntityID)> partition, EntityID[] ids, Collider[] colliders, out (EntityID, EntityID)[] collisionPartition, out (EntityID, EntityID)[] triggerPartition)
         {
             List<(EntityID, EntityID)> collisionPartitionList = new();
@@ -168,6 +202,9 @@ namespace neongine
             triggerPartition = triggerPartitionList.ToArray();
         }
 
+        /// <summary>
+        /// Convert collision and trigger datas into a storable format
+        /// </summary>
         private FrameDataStorage Convert(CollisionData[] collisionDatas, (EntityID, EntityID)[] triggerDatas) {
             FrameDataStorage storage = new FrameDataStorage();
 
@@ -214,25 +251,17 @@ namespace neongine
             return storage;
         }
 
+        /// <summary>
+        /// Return true if this entity is colliding with something this frame
+        /// </summary>
         public static bool IsColliding(EntityID id)
         {
             return instance.m_Storage.EntityToCollisions.ContainsKey(id) || instance.m_Storage.EntityToTriggers.ContainsKey(id);
         }
 
-        public static List<(EntityID, Collision)> GetFrameCollisions(EntityID id)
-        {
-            if (instance.m_Storage.EntityToCollisions.TryGetValue(id, out var value))
-                return value;
-            return null;
-        }
-
-        public static List<EntityID> GetFrameTriggers(EntityID id)
-        {
-            if (instance.m_Storage.EntityToTriggers.TryGetValue(id, out var value))
-                return value;
-            return null;
-        }
-
+        /// <summary>
+        /// Trigger collider enter / exit and trigger enter / exit events using this frame collision datas
+        /// </summary>
         private void TriggerEvents(FrameDataStorage currentStorage) {            
             Collision collision;
 
