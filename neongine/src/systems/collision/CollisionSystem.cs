@@ -35,6 +35,20 @@ namespace neongine
 
             actions.Add(action);
         }
+
+        public static List<(EntityID, Collision)> GetFrameCollisions(EntityID entityID)
+        {
+            if (instance.m_Storage.EntityToCollisions.TryGetValue(entityID, out var collisions))
+                return collisions;
+            return null;
+        }
+
+        public static List<EntityID> GetFrameTriggers(EntityID entityID)
+        {
+            if (instance.m_Storage.EntityToTriggers.TryGetValue(entityID, out var triggers))
+                return triggers;
+            return null;
+        }
 #endregion
 
 #region definitions
