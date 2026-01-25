@@ -28,7 +28,7 @@ public class MyGame: IGame {
 ```
 
 Then, you only need to pass an instance of it as argument to a new `NeongineApplication` and run:
-```
+```c#
 using var application = new NeongineApplication(new MyGame());
 application.Run();
 ```
@@ -66,7 +66,7 @@ When creating an entity, you can pass transform datas as arguments to initialize
 EntityID entity = Neongine.Entity(name: "my_entity", position: Vector3.One, rotation: 45.0f, scale: Vector2.One)
 ```
 
-Transform coordinates are dependent on parent-child relationships. When a parent's transform data change (position, rotation or scale), it changes its children's transform datas accordingly. Of course, coordinates can be accessed and modified in world space or in local-space.
+Transform coordinates are dependent on parent-child relationships. Changing any transform data (position, rotation or scale) will update its children's transform datas accordingly. Of course, coordinates can be accessed and modified in world space and in local-space.
 ```c#
 Transform transform = entity.Get<Transform>();
 
@@ -79,11 +79,32 @@ float localRotation = transform.LocalRotation;
 Vector2 localScale = transform.LocalScale;
 ```
 
-## Builtin components and systems
-
-### Transform
 ### Renderer
+
+To attach a sprite to an entity, you can add the `Renderer` component. It takes a `Texture2D` object as argument, and optionally a scale that will be applied to the sprite (multiplied be the entity's scale).
+
+```c#
+Texture2D myTexture;
+entity.Add(new Renderer(myTexture, 2.0f));
+```
+
+To load a sprite file into a `Texture2D`, you can use the `Assets` static class. It will load and cache your file for future asset request.
+
+```c#
+Texture2D myTexture = Assets.GetAsset<Texture2D>("path_to_sprite"); 
+```
+
+Make sure to include your sprite to the ContentManager first using [Monogame Content Buidler Pipeline](https://github.com/MonoGame/MonoGame/tree/develop/MonoGame.Framework.Content.Pipeline) that comes with Monogame, or your file won't be included when building the application.
+
 ### Velocity
+
+An entity with the `Velocity` component will automatically move each frame by the specified Vector2 value.
+```c#
+entity.Add(new Velocity(Vector2.One));
+```
+
+However, the Collision System may affect the velocity's value when resolving collisions. Thus, the velocity's value might be changed at runtime by other systems. You may need to create another component and / or system to act on this component after collision resolution, for example for a bounce effect.
+
 ### Collision
 ### ...
 
