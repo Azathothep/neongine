@@ -4,13 +4,15 @@ https://docs.github.com/en/get-started/writing-on-github/getting-started-with-wr
 
 **Neongine** is a custom C# engine based on [Monogame](https://github.com/MonoGame/MonoGame) and the [neon](https://github.com/Azathothep/neon) ECS framework.
 It features:
-- Entities, Components & 
-- Transform, rendering, camera, collision
-- Play mode
-- Serialization
-- Asset loading / unloading
-- Scenes
-- ...
+- An Editor mode & a Play mode
+- Base components and systems for positioning, moving and rendering entities
+- Easy update and draw systems implementation
+- An efficient collision system, working with any kind of convex shapes and featuring a quadtree space partitioner
+- Support for developing editor-only systems
+- Scene loading and unloading
+- An asset database to easily load external files
+- A serialization system with references kept between entities, components, systems and assets
+- ... and much more!
 
 You can find an example pong game made using the engine [here](https://github.com/Azathothep/neongine-pong)!
 
@@ -24,8 +26,8 @@ public class MyGame: IGame {
     public int WindowWidth;
     public int WindowHeight;
 
-    public void EditorLoad();
-    public void GameLoad();
+    public void EditorLoad(); // Add here your code to create and load only editor-related entities and systems
+    public void GameLoad(); // Add here you code to create and load game-related entities and systems
 }
 ```
 
@@ -171,6 +173,10 @@ public static void OnTriggerEnter(EntityID id, Action<EntityID> action);
 public static void OnTriggerExit(EntityID id, Action<EntityID> action);
 ```
 
+### IsStatic
+
+When adding a `Collider` to an entity, you can also specify if the entity is expected to move or not (i.e, a wall) by adding the `IsStatic` component. It doesn't store any data, but instruct the collision system to skip some steps when detecting collisions related to this entity.
+
 ### NotDraggable
 
 Every entity is draggable in the editor's edit mode, using a small red point at its `Transform`'s position.
@@ -182,8 +188,18 @@ The `Camera` class contains a static `Main` instance representing the current `C
 If you need to manipulate or change it, you can simply add a `Camera` component to an entity and replace the static reference.
 ```c#
 Camera newCamera = entity.Add<Camera>();
-Camera.Main = newCamera
+Camera.Main = newCamera;
 ```
+
+To convert a coordinate from screen-to-world or world-to-screen, use the following `Camera` methods:
+```c#
+public Vector2 ScreenToWorld(Vector2 v);
+public Vector2 ScreenToWorld(float x, float y);
+public Vector2 WorldToScreen(Vector2 v);
+public Vector2 WorldToScreen(float x, float y);
+```
+
+You can also get the screen dimensions (in pixels) and the world dimensions (screen dimensions converted in world-space coordinates) from the `ScreenDimensions` and `WorldDimensions` members.
 
 ## Systems
 
@@ -199,27 +215,74 @@ public static void Remove(ISystem system);
 
 In addition, neongine gives you the possibility to create systems for editor-only execution, using the `IEditorUpdateSystem` and `IEditorDrawSystem` interfaces.
 
-Implementing these interfaces require you to specify if you want the system to be active only in the editor's *edit mode* or also in the editor's *play mode* (for example, the EditorCollisionVisualizer shows you colliders shape both in edit and in play mode)
+Implementing these interfaces require you to specify if you want the system to be active only in the editor's *edit mode* or also in the editor's *play mode* (for example, the `EditorDragSystem` lets you drag entities only in edit mode, but the `EditorCollisionVisualizer` shows you colliders shape both in edit and in play mode)
 ```c#
 public bool ActiveInPlayMode { get; }
 ```
 
 However, **they will never be run in the published build**.
 
+### Collision system
+
+The Collision System is divided into three steps:
+- Space partitioning, which reduces the number of collisions to detect by partitioning the space
+- Collision detection, which actually detect collisions
+- Collision resolution, which resolves previously detected collisions
+
+For each step, neongine provides builtin solutions:
+- `QuadtreeSpacePartitioner`: a quadtree space partitioner
+- `SATCollisionDetector`: a separating axis algorithm for detecting any overlapping shapes
+- `VelocityCollisionResolver`: a velocity-based collision resolution
+
+If you want to override one of these steps, you can implement the `ISpacePartitioner`, `ICollisionDetector` or `ICollisionResolver` interfaces and simply replace the related class in the `Neongine.LoadCollisionSystems` method.
+
+### Rendering system
+
+If you need to draw squares, circles, polygons and lines, you can use the following `RenderingSystem `static methods:
+```c#
+public static void DrawCircle(Vector2 p, float radius, int resolution, Color color, float thickness = 1.0f);
+public static void DrawLine(Vector2 start, Vector2 end, Color color);
+public static void DrawRectangle(Vector2 position, Vector2 dimensions, float rotation, Color color);
+public static void DrawPolygon(Vector2 p, Vector2[] vertices, Color color);
+```
+
+You can also draw text, with or without specifying the font (for the latter, the default `Arial` font will be used):
+```c#
+public static void DrawText(string text, Vector2 screenPosition, float size, Color color); // screenPosition is in screen-space pixels, and relate to the text's top-left bound. Use the main camera's ScreenDimensions property to get the window dimensions in pixels.
+public static void DrawText(SpriteFont font, string text, Vector2 screenPosition, float size, Color color); // for loading a SpriteFont, see the Assets section
+```
+
 ## Serialization
 
-[Serialize] attribute : components & systems
-JsonConstructor
-Save
+Neongine features full serialization for components and systems. It uses Newtonsoft.Json to convert scenes into the `JSON` format.
+
+Serialization is used when saving a scene in the editor (see [Editor functionalities](#editor-functionalities)).
+
+### Serializing components and systems
+
+By default, all components are serialized when saving a scene. If you don't want a component to be serialized, you can use the `[DoNotSerialize]` class attribute.
+
+Contrary to components, **systems are not serialized by default**. You have to explicitly add the [Serialize] attribute to your system class for it to be included by the scene serializer.
+
+### Serializing members
+
+Members, public or private, aren't serialized by default. For them to be included by the scene serializer, you have to explicitly add the `[Serialize]` attribute.
+
+### Entities, component, systems and assets references
+
+**Entities**, **component** and **systems** references are all supported by the serialization system. This means a referenced entity will be properly resolved when reconstructing a scene.
+
+**Assets** references are also supported, but **only if you used the `Assets` static class** (see [Assets](#assets)) **to load the targetted asset**. 
 
 ## Scene
 
 Currently, any created entity or registered system is present globally ; you can't store them in distinct scenes.
-You can, however, request for the current scene runtime state using the following method:
+You can, however, use the following methods to get the scene state, serialize it, load it or unload it:
 ```c#
+// Get a structure holding references to all the currently stored entities and systems
 RuntimeScene runtimeScene = Scenes.GetRuntime();
 
-// Serializes all the scene datas
+// Get a structure storing serialized entities and systems
 SceneDefinition sceneDefinition = Scenes.GetDefinition(runtimeScene);
 
 // Unload the scene using the RuntimeScene object
@@ -229,12 +292,21 @@ Scenes.Unload(runtimeScene);
 Scenes.Load(sceneDefinition);
 ```
 
+If you want to load a serialized scene previously saved in a json file, you can also use the following method to build the scene directly from the file:
+```c#
+string filePath = EditorSaveSystem.AbsoluteSavePath;
+Scenes.Load(filepath);
+```
 
 ## Assets
 
-You can use the `Assets` static class. It will load and cache your file for future asset request.
+To load external assets (sprites, fonts, ...), you must first include them to your build using the [Monogame Content Buidler Pipeline](https://github.com/MonoGame/MonoGame/tree/develop/MonoGame.Framework.Content.Pipeline) that comes with Monogame.
+
+Then, you can use the `Assets` static class to get a specific asset:
 ```c#
 Texture2D myTexture = Assets.GetAsset<Texture2D>("path_to_sprite"); 
 ```
 
-Make sure to include your sprite to the ContentManager first using [Monogame Content Buidler Pipeline](https://github.com/MonoGame/MonoGame/tree/develop/MonoGame.Framework.Content.Pipeline) that comes with Monogame, or your file won't be included when building the application.
+The `Assets` class will keep a reference to the requested files in a database. This allows the serialization system to get the file path from the reference.
+
+You can find an example pong game made using the engine [here](https://github.com/Azathothep/neongine-pong)!
