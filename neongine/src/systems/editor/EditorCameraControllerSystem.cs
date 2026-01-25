@@ -35,13 +35,13 @@ namespace neongine.editor
 
             Vector2 input = new Vector2();
 
-            if (keyboardState.IsKeyDown(Keys.Q)) {
+            if (keyboardState.IsKeyDown(Keys.A)) {
                 input.X = -1;
             } else if (keyboardState.IsKeyDown(Keys.D)) {
                 input.X = 1;
             }
 
-            if (keyboardState.IsKeyDown(Keys.Z)) {
+            if (keyboardState.IsKeyDown(Keys.W)) {
                 input.Y = 1;
             } else if (keyboardState.IsKeyDown(Keys.S)) {
                 input.Y = -1;

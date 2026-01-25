@@ -43,7 +43,24 @@ Like the engine, your game will need to use both [Monogame](https://github.com/M
 
 ## Game vs Editor
 
-- Editor vs Game systems
+When building neongine, you will actually run the editor. It means that any game system you implement won't be active right away, and will required you to press `P` to enter play mode.
+
+### Editor functionalities
+
+In editor, you can move entities around using the little red circle that appear at their Transform's position. To disable this feature for a specific entity, add it the `NotDraggable` component (see [NotDraggable](#notdraggable) section).
+
+Use the `WASD` keys to move the camera around, and the `I` and `O` keys to zoom in / out. Be careful however, the camera state won't reload when entering play mode.
+
+You can also save the current scene by pressing `Ctrl+S` key. This will create a `MainScene.json` file in the `Assets` folder, which can be loaded by the `Scenes.Load(string)` static method.
+
+### Building the final application
+
+To build the final application without the editor, use the following `dotnet publish` parameters:
+```
+dotnet publish -c Release -r win-x64 -p:PublishReadyToRun=false -p:TieredCompilation=false --self-contained /p:DefineConstants=NEONGINE_BUILD
+```
+
+The application created this way won't run any editor-related code.
 
 ## Entities
 
@@ -140,21 +157,78 @@ Collider collider1 = new Collider(shape, size: 2.0f, rotation: 45.0f); // The co
 Collider collider2 = new Collider(new Geometry(GeometryType.Circle, 2.0f)); //A Geometry can be implicitely converted into a Shape
 ```
 
-Finally, you can specify as last parameter if your `Collider` should be considered as a **trigger**. Trigger overlaps will detect overlapping shapes and send events, but won't block them during collision resolution. 
+Finally, you can specify as last parameter if your `Collider` should be considered as a **trigger**. Trigger will detect overlapping shapes and send enter and exit events, but won't block them during collision resolution. 
 ```c#
 Collider collider = new Collider(myShape, isTrigger: true);
 ```
 
-In editor, the collider's shape are visible in yellow. They will be invisible in a published build.
+To subscribe to collider events, you can use the following static methods:
+```c#
+// The EntityID given as parameter of your Action will be the other entity the specified entity is colliding / triggering with
+public static void OnColliderEnter(EntityID id, Action<EntityID, Collision> action);
+public static void OnColliderExit(EntityID id, Action<EntityID> action);
+public static void OnTriggerEnter(EntityID id, Action<EntityID> action);
+public static void OnTriggerExit(EntityID id, Action<EntityID> action);
+```
 
 ### NotDraggable
 
-Every entity is draggable in the editor's edit mode, using a small point at its `Transform`'s position.
+Every entity is draggable in the editor's edit mode, using a small red point at its `Transform`'s position.
 If you want to disable this feature for an entity, you can add it the `NotDraggable` component.
+
+### Camera
+
+The `Camera` class contains a static `Main` instance representing the current `Camera` used by the Rendering system.
+If you need to manipulate or change it, you can simply add a `Camera` component to an entity and replace the static reference.
+```c#
+Camera newCamera = entity.Add<Camera>();
+Camera.Main = newCamera
+```
+
+## Systems
+
+`Components` are only designed to store datas. To update the game state, you can implement two types of system interfaces:
+- `IGameUpdateSystem` have their `Update(TimeSpan)` method called each frame
+- `IGameDrawSystem` have their `Draw()` method called before each render. Use it when rendering something on-screen (shapes, text, ...)
+
+To add or remove a system to the storage, use the `Systems` static class:
+```c#
+public static void Add(ISystem system);
+public static void Remove(ISystem system);
+```
+
+In addition, neongine gives you the possibility to create systems for editor-only execution, using the `IEditorUpdateSystem` and `IEditorDrawSystem` interfaces.
+
+Implementing these interfaces require you to specify if you want the system to be active only in the editor's *edit mode* or also in the editor's *play mode* (for example, the EditorCollisionVisualizer shows you colliders shape both in edit and in play mode)
+```c#
+public bool ActiveInPlayMode { get; }
+```
+
+However, **they will never be run in the published build**.
+
+## Serialization
+
+[Serialize] attribute : components & systems
+JsonConstructor
+Save
 
 ## Scene
 
-## Serialization
+Currently, any created entity or registered system is present globally ; you can't store them in distinct scenes.
+You can, however, request for the current scene runtime state using the following method:
+```c#
+RuntimeScene runtimeScene = Scenes.GetRuntime();
+
+// Serializes all the scene datas
+SceneDefinition sceneDefinition = Scenes.GetDefinition(runtimeScene);
+
+// Unload the scene using the RuntimeScene object
+Scenes.Unload(runtimeScene);
+
+// Reload the scene using the SceneDefinition
+Scenes.Load(sceneDefinition);
+```
+
 
 ## Assets
 
