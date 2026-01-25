@@ -4,7 +4,9 @@ https://docs.github.com/en/get-started/writing-on-github/getting-started-with-wr
 
 **Neongine** is a custom C# engine based on [Monogame](https://github.com/MonoGame/MonoGame) and the [neon](https://github.com/Azathothep/neon) ECS framework.
 It features:
-- Entities, Components & Systems
+- Entities, Components & 
+- Transform, rendering, camera, collision
+- Play mode
 - Serialization
 - Asset loading / unloading
 - Scenes
@@ -27,7 +29,7 @@ public class MyGame: IGame {
 }
 ```
 
-Then, you only need to pass an instance of it as argument to a new `NeongineApplication` and run:
+Then, you only need to pass an instance of your implementation as argument to a new `NeongineApplication` and run:
 ```c#
 using var application = new NeongineApplication(new MyGame());
 application.Run();
@@ -38,6 +40,10 @@ You're now good to go!
 ### Before continuing
 
 Like the engine, your game will need to use both [Monogame](https://github.com/MonoGame/MonoGame) and [neon](https://github.com/Azathothep/neon). I recommand reading their documentation first, to familiarize yourself with their API. 
+
+## Game vs Editor
+
+- Editor vs Game systems
 
 ## Entities
 
@@ -59,9 +65,9 @@ Neongine provides you with the following set of base components:
 ### Transform
 
 Each neongine entity is initialized with a `Transform`.
-Transforms store datas relative to the coordinates (Vector3), rotation (float) and scale (Vector2) of the entity.
+Transforms store datas relative to the coordinates of the entity: **position** (Vector3), **rotation** (float) and **scale** (Vector2).
 
-When creating an entity, you can pass transform datas as arguments to initialize it right away.
+When creating an entity, you can pass coordinates as arguments to initialize its transform right away.
 ```c#
 EntityID entity = Neongine.Entity(name: "my_entity", position: Vector3.One, rotation: 45.0f, scale: Vector2.One)
 ```
@@ -88,13 +94,7 @@ Texture2D myTexture;
 entity.Add(new Renderer(myTexture, 2.0f));
 ```
 
-To load a sprite file into a `Texture2D`, you can use the `Assets` static class. It will load and cache your file for future asset request.
-
-```c#
-Texture2D myTexture = Assets.GetAsset<Texture2D>("path_to_sprite"); 
-```
-
-Make sure to include your sprite to the ContentManager first using [Monogame Content Buidler Pipeline](https://github.com/MonoGame/MonoGame/tree/develop/MonoGame.Framework.Content.Pipeline) that comes with Monogame, or your file won't be included when building the application.
+To load a sprite file into a `Texture2D`, see the [Asset](#asset-management) section.
 
 ### Velocity
 
@@ -105,15 +105,62 @@ entity.Add(new Velocity(Vector2.One));
 
 However, the Collision System may affect the velocity's value when resolving collisions. Thus, the velocity's value might be changed at runtime by other systems. You may need to create another component and / or system to act on this component after collision resolution, for example for a bounce effect.
 
-### Collision
-### ...
+### AngleVelocity
 
-## Game vs Editor
+Similar to `Velocity`, an entity with the `AngleVelocity` component will automatically rotate by the specified value-per-seconds each frame.
+```c#
+entity.Add(new AngleVelocity(90.0f)); // The entity will rotate at 90 degrees per seconds
+```
 
-- Editor vs Game systems
+Important note: any entity with an `AngleVelocity` component will be excluded from the collision system, even if they have a `Collider` component. Collision resolution for rotating entities isn't yet supported.
+
+### Collider
+
+You can add a `Collider` to entities for collisions and trigger detection.
+
+Each `Collider` is defined by `Shape` object, storing the vertices coordinates of the collider.
+```c#
+Shape shape = new Shape([
+                            new Vector2(0.25f, 1.2f),
+                            new Vector2(-0.4f, 3.1f),
+                            new Vector2(-0.4f, -3.1f),
+                            new Vector2(0.25, -2.1f)
+                        ]);
+```
+
+For basic rectangle and circle shapes, you can also pass a `Geometry` object for it to convert into the correct vertices:
+```c#
+Shape shape = new Shape(new Geometry(GeometryType.Rectangle, width: 1.0f, height: 2.0f));
+```
+
+You can then pass the shape to the `Collider` on creation, along with other optional parameters:
+```c#
+Shape shape = new Shape(...);
+Collider collider1 = new Collider(shape, size: 2.0f, rotation: 45.0f); // The collider can have its own size and rotation, calculated on top of the entitie's Transform's ones
+Collider collider2 = new Collider(new Geometry(GeometryType.Circle, 2.0f)); //A Geometry can be implicitely converted into a Shape
+```
+
+Finally, you can specify as last parameter if your `Collider` should be considered as a **trigger**. Trigger overlaps will detect overlapping shapes and send events, but won't block them during collision resolution. 
+```c#
+Collider collider = new Collider(myShape, isTrigger: true);
+```
+
+In editor, the collider's shape are visible in yellow. They will be invisible in a published build.
+
+### NotDraggable
+
+Every entity is draggable in the editor's edit mode, using a small point at its `Transform`'s position.
+If you want to disable this feature for an entity, you can add it the `NotDraggable` component.
 
 ## Scene
 
 ## Serialization
 
 ## Assets
+
+You can use the `Assets` static class. It will load and cache your file for future asset request.
+```c#
+Texture2D myTexture = Assets.GetAsset<Texture2D>("path_to_sprite"); 
+```
+
+Make sure to include your sprite to the ContentManager first using [Monogame Content Buidler Pipeline](https://github.com/MonoGame/MonoGame/tree/develop/MonoGame.Framework.Content.Pipeline) that comes with Monogame, or your file won't be included when building the application.
