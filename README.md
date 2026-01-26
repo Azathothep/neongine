@@ -2,15 +2,14 @@
 
 **Neongine** is a custom C# engine based on [Monogame](https://github.com/MonoGame/MonoGame) and the [neon](https://github.com/Azathothep/neon) ECS framework.
 It features:
-- An Editor mode & a Play mode
-- Base components and systems for positioning, moving and rendering entities
+- An Editor and a Play mode
+- Builtin components and systems for positioning, moving and rendering entities
 - Easy update and draw systems implementation
 - An efficient collision system, working with any kind of convex shapes and featuring a quadtree space partitioner
 - Support for developing editor-only systems
-- Scene loading and unloading
 - An asset database to easily load external files
-- A serialization system with references kept between entities, components, systems and assets
-- ... and much more!
+- Scene loading and unloading
+- Full scene serialization keeping references between entities, components, systems and assets
 
 Find here an [example pong game](https://github.com/Azathothep/neongine-pong) made using the engine!
 
@@ -89,7 +88,7 @@ When creating an entity, you can pass coordinates as arguments to initialize its
 EntityID entity = Neongine.Entity(name: "my_entity", position: Vector3.One, rotation: 45.0f, scale: Vector2.One)
 ```
 
-Transform coordinates are dependent on parent-child relationships. Changing any transform data (position, rotation or scale) will update its children's transform datas accordingly. Of course, coordinates can be accessed and modified in world space and in local-space.
+Transform coordinates are dependent on parent-child relationships (children will automatically move, rotate and scale when their parent move, rotate or scale). Coordinates can be accessed and modified in world space or in local-space.
 ```c#
 Transform transform = entity.Get<Transform>();
 
@@ -124,7 +123,7 @@ If your entity also has a `Collider` component, keep in mind the the collision s
 
 ### AngleVelocity
 
-Similar to `Velocity`, an entity with the `AngleVelocity` component will automatically rotate by the specified value-per-seconds each frame.
+Similar to `Velocity`, an entity with the `AngleVelocity` component will automatically rotate by the specified degrees-per-seconds.
 ```c#
 entity.Add(new AngleVelocity(90.0f)); // The entity will rotate at 90 degrees per seconds
 ```
@@ -145,7 +144,7 @@ Shape shape = new Shape([
                         ]);
 ```
 
-For basic rectangle and circle shapes, you can also pass a `Geometry` object for it to convert into the correct vertices:
+For basic rectangle and circle shapes, you can also pass a `Geometry` object that will be converted into vertices:
 ```c#
 Shape shape = new Shape(new Geometry(GeometryType.Rectangle, width: 1.0f, height: 2.0f));
 ```
@@ -157,12 +156,12 @@ Collider collider1 = new Collider(shape, size: 2.0f, rotation: 45.0f); // The co
 Collider collider2 = new Collider(new Geometry(GeometryType.Circle, 2.0f)); // A Geometry can be implicitely converted into a Shape
 ```
 
-Finally, you can specify as last parameter if your `Collider` should be considered as a **trigger**. Triggers will detect overlapping shapes and send enter and exit events, but won't block them during collision resolution. 
+Finally, you can specify as last parameter if your `Collider` should be considered as a **trigger**. Triggers will detect overlapping shapes and send enter and exit events but don't block anything. 
 ```c#
 Collider collider = new Collider(myShape, isTrigger: true);
 ```
 
-To subscribe to collider events, you can use the following static methods:
+To subscribe to collider events, you can use the following `ColliderSystem` static methods:
 ```c#
 // The EntityID given as parameter of your Action will be the other entity the specified entity is colliding / triggering with
 public static void OnColliderEnter(EntityID id, Action<EntityID, Collision> action);
@@ -178,7 +177,7 @@ When adding a `Collider` to an entity, you can also specify if the entity is exp
 ### NotDraggable
 
 Every entity is draggable in the editor's edit mode, using a small red point at its `Transform`'s position.
-If you want to disable this feature for an entity, you can add it the `NotDraggable` component.
+If you want to disable this feature for an entity, you can add it `NotDraggable` component on it.
 
 ### Camera
 
@@ -215,10 +214,12 @@ public static void Remove(ISystem system);
 
 In addition, neongine gives you the possibility to create systems for editor-only execution, using the `IEditorUpdateSystem` and `IEditorDrawSystem` interfaces.
 
-Implementing these interfaces require you to specify if you want the system to be active only in the editor's *edit mode* or also in the editor's *play mode* (for example, the `EditorDragSystem` lets you drag entities only in edit mode, but the `EditorCollisionVisualizer` shows you colliders shape both in edit and in play mode)
+Implementing these interfaces require you to specify if you want the system to be active only in the editor's *edit mode* or also in the editor's *play mode* (for example, the `EditorDragSystem` lets you drag entities only in edit mode, but the `EditorCollisionVisualizer` shows you colliders shape both in edit and in play mode).
 ```c#
 public bool ActiveInPlayMode { get; }
 ```
+
+We recommand you to create and load your editor-related content into the `EditorLoad` method of your `IGame` implementation.
 
 In any case, **editor systems won't run in the published build**.
 
@@ -233,10 +234,10 @@ The Collision System is divided into three steps:
 - Collision detection, which actually detect collisions
 - Collision resolution, which resolves previously detected collisions
 
-For each step, neongine provides builtin solutions:
+For each step, neongine provide the following builtins:
 - A `QuadtreeSpacePartitioner` to efficiently partition space
 - The `SATCollisionDetector`, a separating axis algorithm for detecting any overlapping shapes
-- A `VelocityCollisionResolver` for a simple collision resolution between moving and non-moving entities
+- A `VelocityCollisionResolver` for a simple collision resolution using the `Velocity` component
 
 If you want to override one of these steps, you can implement the `ISpacePartitioner`, `ICollisionDetector` or `ICollisionResolver` interface and simply replace the related class in the `Neongine.LoadCollisionSystems` method.
 
@@ -276,12 +277,11 @@ Members, public or private, aren't serialized by default. For them to be include
 
 **Entities**, **component** and **systems** references are all supported by the serialization system. This means only their ID will be serialized, which will be used to resolve scene dependencies when rebuilding from json.
 
-**Assets** references are also supported, but **only if you used the `Assets` static class** (see [Asset management](#asset-management)) **to load the referenced asset**. 
+**Assets** references are also supported, but **only if you used the `Assets` static class to load them** (see [Asset management](#asset-management)). 
 
 ## Scene
 
-Currently, any created entity or registered system is present globally ; you can't store them in distinct scenes.
-You can, however, use the following methods to get the scene state, serialize it, load it or unload it:
+If you want to get the current scene state, serialize it, load it or unload it, you can use the following methods:
 ```c#
 // Get a structure holding references to all the currently stored entities and systems
 RuntimeScene runtimeScene = Scenes.GetRuntime();
@@ -296,7 +296,7 @@ Scenes.Unload(runtimeScene);
 Scenes.Load(sceneDefinition);
 ```
 
-If you want to load a serialized scene previously saved in a json file, you can also use the following method to build the scene directly from the file:
+After saving a scene in a serialized JSON file, you can load it later using the following method:
 ```c#
 string filePath = EditorSaveSystem.AbsoluteSavePath;
 Scenes.Load(filepath);
@@ -311,7 +311,7 @@ Then, you can use the `Assets` static class to get a specific asset:
 Texture2D myTexture = Assets.GetAsset<Texture2D>("path_to_sprite"); 
 ```
 
-The `Assets` class will keep a reference to the requested files in a database. This allows the serialization system to get the file path from the reference.
+The `Assets` class will keep a reference to the requested files in a database. This allows the serialization system to later get the file path from the reference.
 
 ## Further reading
 
