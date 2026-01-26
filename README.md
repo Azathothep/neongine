@@ -16,6 +16,7 @@ Find here an [example pong game](https://github.com/Azathothep/neongine-pong) ma
 ## Getting Started
 
 Create a new Monogame project, clone the neongine repo and add the `neongine` reference to your project.
+Don't forget to init the `neon` submodule using `git submodule init` and `git submodule update`.
 
 Create a new class implementing the `IGame` interface. The will be the entrypoint for your game.
 ```c#
